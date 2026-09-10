@@ -1,0 +1,6 @@
+@MoblyUp.API_HostAddress = http://localhost:5007
+
+GET {{MoblyUp.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

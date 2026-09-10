@@ -1,0 +1,17 @@
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\bin\Debug\net10.0\MoblyUp.Infrastructure.deps.json
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\bin\Debug\net10.0\MoblyUp.Infrastructure.dll
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\bin\Debug\net10.0\MoblyUp.Infrastructure.pdb
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\bin\Debug\net10.0\MoblyUp.Application.dll
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\bin\Debug\net10.0\MoblyUp.Domain.dll
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\bin\Debug\net10.0\MoblyUp.Domain.pdb
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\bin\Debug\net10.0\MoblyUp.Application.pdb
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\MoblyUp.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\MoblyUp.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\MoblyUp.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\MoblyUp.Infrastructure.AssemblyInfo.cs
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\MoblyUp.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\MoblyUp..9AE7CC87.Up2Date
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\MoblyUp.Infrastructure.dll
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\refint\MoblyUp.Infrastructure.dll
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\MoblyUp.Infrastructure.pdb
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\ref\MoblyUp.Infrastructure.dll
