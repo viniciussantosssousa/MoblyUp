@@ -15,3 +15,4 @@ C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastru
 C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\refint\MoblyUp.Infrastructure.dll
 C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\MoblyUp.Infrastructure.pdb
 C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\ref\MoblyUp.Infrastructure.dll
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Infrastructure\obj\Debug\net10.0\MoblyUp.Infrastructure.sourcelink.json

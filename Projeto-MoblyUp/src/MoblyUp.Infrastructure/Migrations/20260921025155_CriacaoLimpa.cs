@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MoblyUp.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class CriacaoLimpa : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -28,7 +28,7 @@ namespace MoblyUp.Infrastructure.Migrations
                 name: "Usuarios",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Nome = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Cpf = table.Column<string>(type: "nvarchar(11)", maxLength: 11, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
@@ -73,29 +73,24 @@ namespace MoblyUp.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ClienteId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    MontadorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ServicoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ValorTotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    TaxaPlataforma = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    ValorMontador = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ClienteId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    MontadorId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    TipoMovel = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    TamanhoMovel = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    UrlFotoMovelTemporaria = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    EnderecoServico = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
+                    ValorProposto = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    TaxaPlataforma = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    ValorMontador = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DataAceite = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DataEnvioFoto = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DataConclusao = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    FotoConclusaoUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    EnderecoServico = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false)
+                    FotoConclusaoUrl = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PedidosMontagem", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PedidosMontagem_Servicos_ServicoId",
-                        column: x => x.ServicoId,
-                        principalTable: "Servicos",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_PedidosMontagem_Usuarios_ClienteId",
                         column: x => x.ClienteId,
@@ -119,11 +114,6 @@ namespace MoblyUp.Infrastructure.Migrations
                 name: "IX_PedidosMontagem_MontadorId",
                 table: "PedidosMontagem",
                 column: "MontadorId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PedidosMontagem_ServicoId",
-                table: "PedidosMontagem",
-                column: "ServicoId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Servicos_CategoriaId",

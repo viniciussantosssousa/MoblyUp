@@ -5,8 +5,8 @@ namespace MoblyUp.Domain.Entities
     public class PedidoMontagem
     {
         public Guid Id { get; private set; }
-        public Guid ClienteId { get; private set; }
-        public Guid? MontadorId { get; private set; }
+        public string ClienteId { get; private set; }
+        public string? MontadorId { get; private set; }
 
         public string TipoMovel { get; private set; }
         public string TamanhoMovel { get; private set; }
@@ -29,7 +29,7 @@ namespace MoblyUp.Domain.Entities
 
         protected PedidoMontagem() { }
 
-        public PedidoMontagem(Guid clienteId, string tipoMovel, string tamanhoMovel, string? urlFotoMovelTemporaria, string enderecoServico)
+        public PedidoMontagem(string clienteId, string tipoMovel, string tamanhoMovel, string? urlFotoMovelTemporaria, string enderecoServico)
         {
             Id = Guid.NewGuid();
             ClienteId = clienteId;
@@ -41,8 +41,7 @@ namespace MoblyUp.Domain.Entities
             DataCriacao = DateTime.UtcNow;
         }
 
-
-        public void ReceberProposta(Guid montadorId, decimal valorProposto)
+        public void ReceberProposta(string montadorId, decimal valorProposto)
         {
             if (Status != StatusPedido.Disponivel)
                 throw new Exception("Este pedido não está mais disponível para propostas.");
@@ -84,6 +83,7 @@ namespace MoblyUp.Domain.Entities
             Status = StatusPedido.EmAndamento;
             DataAceite = DateTime.UtcNow;
         }
+
         public void EnviarFotoConclusao(string urlFoto)
         {
             if (Status != StatusPedido.EmAndamento)

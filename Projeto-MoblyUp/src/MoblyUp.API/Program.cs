@@ -6,6 +6,17 @@ using MoblyUp.Application.UseCases;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configuração do CORS para permitir o Front-end
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer("Server=localhost;Database=MoblyUpDb;Trusted_Connection=True;TrustServerCertificate=True;"));
 
@@ -30,6 +41,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Ativando a política de CORS antes do roteamento
+app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

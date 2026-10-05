@@ -12,8 +12,8 @@ using MoblyUp.Infrastructure.Data;
 namespace MoblyUp.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260813220835_SeedCategoriasServicos")]
-    partial class SeedCategoriasServicos
+    [Migration("20260921025155_CriacaoLimpa")]
+    partial class CriacaoLimpa
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -42,20 +42,6 @@ namespace MoblyUp.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Categorias", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            Ativo = true,
-                            Nome = "Móveis de Quarto"
-                        },
-                        new
-                        {
-                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            Ativo = true,
-                            Nome = "Móveis de Sala"
-                        });
                 });
 
             modelBuilder.Entity("MoblyUp.Domain.Entities.PedidoMontagem", b =>
@@ -64,8 +50,9 @@ namespace MoblyUp.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ClienteId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("ClienteId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("DataAceite")
                         .HasColumnType("datetime2");
@@ -76,34 +63,41 @@ namespace MoblyUp.Infrastructure.Migrations
                     b.Property<DateTime>("DataCriacao")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DataEnvioFoto")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("EnderecoServico")
                         .IsRequired()
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
 
                     b.Property<string>("FotoConclusaoUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("MontadorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ServicoId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("MontadorId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("TaxaPlataforma")
+                    b.Property<string>("TamanhoMovel")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal?>("TaxaPlataforma")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("ValorMontador")
+                    b.Property<string>("TipoMovel")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("UrlFotoMovelTemporaria")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal?>("ValorMontador")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("ValorTotal")
+                    b.Property<decimal?>("ValorProposto")
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -111,8 +105,6 @@ namespace MoblyUp.Infrastructure.Migrations
                     b.HasIndex("ClienteId");
 
                     b.HasIndex("MontadorId");
-
-                    b.HasIndex("ServicoId");
 
                     b.ToTable("PedidosMontagem", (string)null);
                 });
@@ -147,33 +139,12 @@ namespace MoblyUp.Infrastructure.Migrations
                     b.HasIndex("CategoriaId");
 
                     b.ToTable("Servicos", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
-                            Ativo = true,
-                            CategoriaId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            Descricao = "Montagem completa de guarda-roupas de 2 a 6 portas.",
-                            Nome = "Montagem de Guarda-Roupa",
-                            Valor = 150.00m
-                        },
-                        new
-                        {
-                            Id = new Guid("44444444-4444-4444-4444-444444444444"),
-                            Ativo = true,
-                            CategoriaId = new Guid("22222222-2222-2222-2222-222222222222"),
-                            Descricao = "Montagem e fixação de painel na parede para TVs até 65 polegadas.",
-                            Nome = "Montagem de Painel de TV",
-                            Valor = 90.00m
-                        });
                 });
 
             modelBuilder.Entity("MoblyUp.Domain.Entities.Usuario", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("Ativo")
                         .HasColumnType("bit");
@@ -231,22 +202,20 @@ namespace MoblyUp.Infrastructure.Migrations
 
             modelBuilder.Entity("MoblyUp.Domain.Entities.PedidoMontagem", b =>
                 {
-                    b.HasOne("MoblyUp.Domain.Entities.Usuario", null)
+                    b.HasOne("MoblyUp.Domain.Entities.Usuario", "Cliente")
                         .WithMany()
                         .HasForeignKey("ClienteId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MoblyUp.Domain.Entities.Usuario", null)
+                    b.HasOne("MoblyUp.Domain.Entities.Usuario", "Montador")
                         .WithMany()
                         .HasForeignKey("MontadorId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("MoblyUp.Domain.Entities.Servico", null)
-                        .WithMany()
-                        .HasForeignKey("ServicoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Montador");
                 });
 
             modelBuilder.Entity("MoblyUp.Domain.Entities.Servico", b =>

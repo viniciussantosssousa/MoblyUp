@@ -5,7 +5,7 @@ namespace MoblyUp.Domain.Entities
 {
     public class Usuario
     {
-        public Guid Id { get; private set; }
+        public string Id { get; private set; }
         public string Nome { get; private set; }
         public string Cpf { get; private set; }
         public string Email { get; private set; }
@@ -19,9 +19,9 @@ namespace MoblyUp.Domain.Entities
         public string? ChavePix { get; private set; } 
         public string? DocumentoFotoUrl { get; private set; } 
 
-        public Usuario(string nome, string cpf, string email, string senhaHash, string telefone, TipoPerfil perfil)
+        public Usuario(string nome, string cpf, string email, string senhaHash, string telefone, TipoPerfil perfil, string? id = null)
         {
-            Id = Guid.NewGuid(); 
+            Id = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString() : id; 
             Nome = nome;
             Cpf = cpf;
             Email = email;
@@ -32,7 +32,6 @@ namespace MoblyUp.Domain.Entities
             Ativo = true;
         }
 
-        
         public void DesativarConta()
         {
             Ativo = false;

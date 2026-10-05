@@ -19,19 +19,19 @@ namespace MoblyUp.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<PedidoMontagem> ObterPorIdAsync(Guid id)
+        public async Task<PedidoMontagem?> ObterPorIdAsync(Guid id)
         {
             return await _context.PedidosMontagem.FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        public async Task<IEnumerable<PedidoMontagem>> ObterPorClienteIdAsync(Guid clienteId)
+        public async Task<IEnumerable<PedidoMontagem>> ObterPorClienteIdAsync(string clienteId)
         {
             return await _context.PedidosMontagem
                 .Where(p => p.ClienteId == clienteId)
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<PedidoMontagem>> ObterPorMontadorIdAsync(Guid montadorId)
+        public async Task<IEnumerable<PedidoMontagem>> ObterPorMontadorIdAsync(string montadorId)
         {
             return await _context.PedidosMontagem
                 .Where(p => p.MontadorId == montadorId)

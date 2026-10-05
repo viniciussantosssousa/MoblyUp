@@ -9,3 +9,4 @@ C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Domain\ob
 C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Domain\obj\Debug\net10.0\refint\MoblyUp.Domain.dll
 C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Domain\obj\Debug\net10.0\MoblyUp.Domain.pdb
 C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Domain\obj\Debug\net10.0\ref\MoblyUp.Domain.dll
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.Domain\obj\Debug\net10.0\MoblyUp.Domain.sourcelink.json

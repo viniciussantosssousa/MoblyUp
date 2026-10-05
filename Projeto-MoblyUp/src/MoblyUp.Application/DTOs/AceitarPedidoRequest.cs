@@ -4,7 +4,7 @@ namespace MoblyUp.Application.DTOs
 {
     public class AceitarPedidoRequest
     {
-        public Guid MontadorId { get; set; }
+        public string MontadorId { get; set; }
         public decimal ValorProposto { get; set; }
     }
 }

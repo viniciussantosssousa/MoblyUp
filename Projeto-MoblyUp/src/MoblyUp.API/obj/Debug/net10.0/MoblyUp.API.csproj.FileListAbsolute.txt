@@ -172,3 +172,4 @@ C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.API\obj\D
 C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.API\obj\Debug\net10.0\MoblyUp.API.pdb
 C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.API\obj\Debug\net10.0\MoblyUp.API.genruntimeconfig.cache
 C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.API\obj\Debug\net10.0\ref\MoblyUp.API.dll
+C:\Users\vinic\OneDrive\Documentos\MoblyUp\Projeto-MoblyUp\src\MoblyUp.API\obj\Debug\net10.0\MoblyUp.API.sourcelink.json

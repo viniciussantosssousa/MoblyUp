@@ -47,8 +47,9 @@ namespace MoblyUp.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ClienteId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("ClienteId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("DataAceite")
                         .HasColumnType("datetime2");
@@ -67,8 +68,8 @@ namespace MoblyUp.Infrastructure.Migrations
                     b.Property<string>("FotoConclusaoUrl")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("MontadorId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("MontadorId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -139,9 +140,8 @@ namespace MoblyUp.Infrastructure.Migrations
 
             modelBuilder.Entity("MoblyUp.Domain.Entities.Usuario", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("Ativo")
                         .HasColumnType("bit");

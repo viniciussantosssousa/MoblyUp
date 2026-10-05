@@ -16,17 +16,17 @@ namespace MoblyUp.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<Usuario> ObterPorIdAsync(Guid id)
+        public async Task<Usuario?> ObterPorIdAsync(string id)
         {
             return await _context.Usuarios.FirstOrDefaultAsync(u => u.Id == id);
         }
 
-        public async Task<Usuario> ObterPorCpfAsync(string cpf)
+        public async Task<Usuario?> ObterPorCpfAsync(string cpf)
         {
             return await _context.Usuarios.FirstOrDefaultAsync(u => u.Cpf == cpf);
         }
 
-        public async Task<Usuario> ObterPorEmailAsync(string email)
+        public async Task<Usuario?> ObterPorEmailAsync(string email)
         {
             return await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
         }
