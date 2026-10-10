@@ -5,10 +5,18 @@ import { AuthContext } from '../../contexts/AuthContext';
 import { styles } from './LoginStyles';
 import { avisar } from '../../services/alerta';
 import { traduzirErro } from '../../services/erros';
+import { LOGIN_TESTE_ATIVO } from '../../services/api';
+
+// Mesmos IDs criados pela API no modo de teste (MoblyUp.API/Autenticacao/LoginDeTeste.cs)
+const USUARIOS_TESTE = [
+  { id: 'teste-cliente', rotulo: 'Cliente' },
+  { id: 'teste-montador', rotulo: 'Montador' },
+  { id: 'teste-montador-2', rotulo: 'Montador 2' },
+];
 
 export default function LoginScreen() {
   const navigation = useNavigation();
-  const { signIn, resetPassword } = useContext(AuthContext);
+  const { signIn, resetPassword, signInTeste } = useContext(AuthContext);
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -26,6 +34,19 @@ export default function LoginScreen() {
     } catch (error) {
       console.log('Erro no login:', error);
       avisar('Erro', traduzirErro(error, 'Erro ao fazer login. Verifique suas credenciais.'));
+    } finally {
+      setEntrando(false);
+    }
+  };
+
+  // MODO DE TESTE: entra sem senha com um usuário de teste da API
+  const handleEntrarTeste = async (id) => {
+    try {
+      setEntrando(true);
+      await signInTeste(id);
+    } catch (error) {
+      avisar('Modo de teste', traduzirErro(error,
+        'A API recusou o login de teste. Confira se ela está rodando em Development com LoginDeTeste:Habilitado = true.'));
     } finally {
       setEntrando(false);
     }
@@ -73,6 +94,19 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.linkButton} onPress={() => navigation.navigate('Cadastro')}>
           <Text style={styles.linkText}>Ainda não tem uma conta? <Text style={styles.linkTextBold}>Cadastre-se</Text></Text>
         </TouchableOpacity>
+
+        {LOGIN_TESTE_ATIVO && (
+          <View style={styles.testeBox}>
+            <Text style={styles.testeTitulo}>MODO DE TESTE (desenvolvimento)</Text>
+            <View style={styles.testeBotoes}>
+              {USUARIOS_TESTE.map(({ id, rotulo }) => (
+                <TouchableOpacity key={id} style={styles.testeBotao} onPress={() => handleEntrarTeste(id)} disabled={entrando}>
+                  <Text style={styles.testeBotaoTexto}>{rotulo}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
       </View>
     </KeyboardAvoidingView>
   );

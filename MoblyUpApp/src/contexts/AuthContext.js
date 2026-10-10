@@ -13,7 +13,7 @@ import {
   deleteUser
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'; // <-- Funções do banco de dados
-import api from '../services/api';
+import api, { LOGIN_TESTE_ATIVO, definirUsuarioDeTeste } from '../services/api';
 import { registrarNotificacoes, removerNotificacoes } from '../services/notificacoes';
 
 export const AuthContext = createContext({});
@@ -93,7 +93,14 @@ export const AuthProvider = ({ children }) => {
             })();
           }
         } else {
-          setUser(null);
+          // Sessão do modo de teste não passa pelo Firebase: restaura a partir do que foi salvo
+          const storedUser = LOGIN_TESTE_ATIVO ? JSON.parse((await AsyncStorage.getItem('@MoblyUp:user')) || 'null') : null;
+          if (storedUser?.teste) {
+            definirUsuarioDeTeste(storedUser.id);
+            setUser(storedUser);
+          } else {
+            setUser(null);
+          }
         }
       } catch (error) {
         // Ex.: regras do Firestore bloqueando a leitura. Sem isso o app ficaria preso no carregamento.
@@ -166,16 +173,43 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // MODO DE TESTE: entra sem Firebase com um dos usuários de teste da API (só em desenvolvimento)
+  const signInTeste = async (idUsuarioTeste) => {
+    definirUsuarioDeTeste(idUsuarioTeste);
+    try {
+      const { data } = await api.get('/usuarios/me');
+      await salvarUsuario({
+        id: data.id,
+        nome: data.nome,
+        email: data.email,
+        tipo: data.tipo,
+        regiao: data.regiao,
+        fotoPerfilUrl: data.fotoPerfilUrl,
+        cpfCadastrado: data.cpfCadastrado,
+        teste: true,
+      });
+    } catch (error) {
+      definirUsuarioDeTeste(null);
+      throw error;
+    }
+  };
+
   const limparSessaoLocal = async () => {
+    definirUsuarioDeTeste(null);
     await AsyncStorage.removeItem('@MoblyUp:user');
     setUser(null);
+  };
+
+  // Senha, e-mail de redefinição e exclusão dependem do Firebase: não existem no modo de teste
+  const exigirLoginReal = () => {
+    if (user?.teste) throw { code: 'modo-teste' };
   };
 
   const signOut = async () => {
     try {
       // Precisa ser antes do logout do Firebase, enquanto ainda há token para a API
       await removerNotificacoes();
-      await firebaseSignOut(auth);
+      if (!user?.teste) await firebaseSignOut(auth);
     } finally {
       // Mesmo sem internet o usuário sai do app
       await limparSessaoLocal();
@@ -186,9 +220,12 @@ export const AuthProvider = ({ children }) => {
   const updateUser = async ({ nome, telefone, regiao, chavePix, fotoPerfilUrl }) => {
     await api.put('/usuarios/me', { nome, telefone, regiao, chavePix, fotoPerfilUrl });
 
-    const dadosFirestore = { nome };
-    if (regiao) dadosFirestore.regiao = regiao;
-    await updateDoc(doc(db, 'usuarios', user.id), dadosFirestore);
+    // Usuários do modo de teste não têm perfil no Firestore
+    if (!user?.teste) {
+      const dadosFirestore = { nome };
+      if (regiao) dadosFirestore.regiao = regiao;
+      await updateDoc(doc(db, 'usuarios', user.id), dadosFirestore);
+    }
 
     const userData = {
       ...user,
@@ -213,6 +250,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const changePassword = async (senhaAtual, novaSenha) => {
+    exigirLoginReal();
     await reautenticar(senhaAtual);
     await updatePassword(auth.currentUser, novaSenha);
   };
@@ -225,6 +263,7 @@ export const AuthProvider = ({ children }) => {
   // Exclui a conta: API (anonimiza os dados e libera o e-mail), Firestore e o login no Firebase.
   // A API recusa se houver serviço em negociação ou em andamento.
   const deleteAccount = async (senhaAtual) => {
+    exigirLoginReal();
     await reautenticar(senhaAtual);
     await api.delete('/usuarios/me');
     await deleteDoc(doc(db, 'usuarios', user.id)).catch((error) =>
@@ -236,7 +275,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{
       signed: !!user, user, loading,
-      signIn, signUp, signOut,
+      signIn, signUp, signOut, signInTeste,
       updateUser, completarCpf, changePassword, resetPassword, deleteAccount,
     }}>
       {children}

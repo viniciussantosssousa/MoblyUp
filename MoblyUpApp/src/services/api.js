@@ -11,9 +11,21 @@ const api = axios.create({
   timeout: 10000,
 });
 
+// MODO DE TESTE (só em desenvolvimento): entra com usuários de teste sem login no Firebase.
+// A API só aceita com ASPNETCORE_ENVIRONMENT=Development e LoginDeTeste:Habilitado=true.
+// Para esconder os botões no app, defina EXPO_PUBLIC_LOGIN_TESTE=false no .env.
+export const LOGIN_TESTE_ATIVO = __DEV__ && process.env.EXPO_PUBLIC_LOGIN_TESTE !== 'false';
+
+let usuarioDeTeste = null;
+export const definirUsuarioDeTeste = (id) => {
+  usuarioDeTeste = id;
+};
+
 // A API identifica o usuário pelo ID token do Firebase. O getIdToken renova
 // o token automaticamente quando ele expira (a cada 1 hora).
 const obterCabecalhoAuth = async () => {
+  if (usuarioDeTeste) return { 'X-Usuario-Teste': usuarioDeTeste };
+
   const token = await auth.currentUser?.getIdToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 };

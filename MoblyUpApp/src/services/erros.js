@@ -13,7 +13,8 @@ const MENSAGENS_FIREBASE = {
   'auth/network-request-failed': 'Sem conexão com a internet.',
   'auth/missing-email': 'Informe o seu e-mail.',
   'permission-denied': 'O servidor recusou o acesso (regras do Firestore).',
-  'perfil-nao-encontrado': 'Esta conta não tem perfil cadastrado. Crie a conta novamente.',
+  'modo-teste': 'Indisponível no modo de teste: entre com uma conta real para usar esta opção.',
+  'perfil-nao-encontrado':'Esta conta não tem perfil cadastrado. Crie a conta novamente.',
 };
 
 // Firebase primeiro; depois a mensagem enviada pela nossa API; por último o texto padrão

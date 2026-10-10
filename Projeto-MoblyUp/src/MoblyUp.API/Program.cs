@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using MoblyUp.API.Autenticacao;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MoblyUp.Domain.Interfaces;
@@ -27,8 +29,28 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Autenticação: o app envia o ID token do Firebase (Authorization: Bearer ...).
 // A API valida a assinatura com as chaves públicas do Google e extrai o UID do usuário.
 var firebaseProjectId = builder.Configuration["Firebase:ProjectId"];
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+
+// MODO DE TESTE: só em Development e com "LoginDeTeste:Habilitado": true no appsettings.Development.json
+var loginDeTesteHabilitado = builder.Environment.IsDevelopment()
+    && builder.Configuration.GetValue<bool>("LoginDeTeste:Habilitado");
+const string EsquemaPadrao = "FirebaseOuTeste";
+
+var autenticacao = builder.Services.AddAuthentication(
+    loginDeTesteHabilitado ? EsquemaPadrao : JwtBearerDefaults.AuthenticationScheme);
+
+if (loginDeTesteHabilitado)
+{
+    autenticacao
+        .AddScheme<AuthenticationSchemeOptions, LoginDeTesteHandler>(LoginDeTeste.Esquema, null)
+        // Com o cabeçalho X-Usuario-Teste usa o login de teste; sem ele, o token do Firebase normalmente
+        .AddPolicyScheme(EsquemaPadrao, EsquemaPadrao, options =>
+            options.ForwardDefaultSelector = context =>
+                context.Request.Headers.ContainsKey(LoginDeTeste.Cabecalho)
+                    ? LoginDeTeste.Esquema
+                    : JwtBearerDefaults.AuthenticationScheme);
+}
+
+autenticacao
     .AddJwtBearer(options =>
     {
         options.Authority = $"https://securetoken.google.com/{firebaseProjectId}";
@@ -71,6 +93,12 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+if (loginDeTesteHabilitado)
+{
+    await LoginDeTeste.CriarUsuariosAsync(app.Services);
+    app.Logger.LogWarning("MODO DE TESTE ATIVO: login sem Firebase liberado para os usuários de teste. Desligue em appsettings.Development.json (LoginDeTeste:Habilitado).");
 }
 
 // Ativando a política de CORS antes do roteamento
