@@ -9,6 +9,8 @@ import api, { mensagemDeErro } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
 import { ResumoReputacao } from '../../components/Reputacao';
+import { encontrarAvaliacaoPendente, adiarAvaliacao } from '../../services/avaliacoesPendentes';
+import ModalAvaliacao from '../../components/ModalAvaliacao';
 
 // Serviços do montador que ainda exigem acompanhamento
 const STATUS_ATIVOS = [
@@ -23,6 +25,8 @@ export default function HomeMontadorScreen() {
 
   const [pedidosDisponiveis, setPedidosDisponiveis] = useState([]);
   const [meusServicos, setMeusServicos] = useState([]);
+  // Serviço concluído em que o montador ainda não avaliou o cliente (abre a janela de avaliação)
+  const [paraAvaliar, setParaAvaliar] = useState(null);
   const [loading, setLoading] = useState(true);
   const [atualizando, setAtualizando] = useState(false);
   const [processandoId, setProcessandoId] = useState(null);
@@ -38,6 +42,7 @@ export default function HomeMontadorScreen() {
       ]);
       setPedidosDisponiveis(disponiveis.data);
       setMeusServicos(meus.data.filter(p => STATUS_ATIVOS.includes(p.status)));
+      setParaAvaliar(await encontrarAvaliacaoPendente(user.id, meus.data, 'notaCliente'));
     } catch (error) {
       console.log('Erro ao buscar pedidos no montador:', error);
     } finally {
@@ -51,6 +56,19 @@ export default function HomeMontadorScreen() {
   const handleAtualizar = () => {
     setAtualizando(true);
     carregar();
+  };
+
+  const avaliarCliente = (nota, comentario) =>
+    api.put(`/pedidos/${paraAvaliar.id}/avaliar-cliente`, { nota, comentario });
+
+  const handleFecharAvaliacao = async (avaliou) => {
+    if (avaliou) {
+      carregar();
+    } else {
+      // "Agora não": não insiste neste pedido (dá para avaliar depois no Histórico)
+      await adiarAvaliacao(user.id, paraAvaliar.id);
+      setParaAvaliar(null);
+    }
   };
 
   // Negar um pedido do feed: some só para este montador e continua aberto para os outros
@@ -246,6 +264,17 @@ export default function HomeMontadorScreen() {
           })
         )}
       </ScrollView>
+
+      <ModalAvaliacao
+        visivel={!!paraAvaliar}
+        titulo="Avalie seu último cliente"
+        subtitulo={paraAvaliar
+          ? `Como foi atender ${paraAvaliar.nomeCliente} na montagem do ${paraAvaliar.tipoMovel}?`
+          : ''}
+        placeholder="Pontualidade, comunicação, local do serviço... (opcional)"
+        onEnviar={avaliarCliente}
+        onFechar={handleFecharAvaliacao}
+      />
     </View>
   );
 }

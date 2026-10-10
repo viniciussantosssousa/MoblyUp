@@ -7,6 +7,8 @@ import { colors } from '../../theme/colors';
 import { AuthContext } from '../../contexts/AuthContext';
 import api from '../../services/api'; // <-- Importando o Axios
 import { STATUS_PEDIDO, isConcluido, formatarData } from '../../services/statusPedido';
+import { encontrarAvaliacaoPendente, adiarAvaliacao } from '../../services/avaliacoesPendentes';
+import ModalAvaliacao from '../../components/ModalAvaliacao';
 
 // Quantos pedidos aparecem antes de tocar em "Ver todos"
 const LIMITE_RECENTES = 5;
@@ -19,6 +21,8 @@ export default function HomeClienteScreen() {
   const [loading, setLoading] = useState(true);
   const [atualizando, setAtualizando] = useState(false);
   const [mostrarTodos, setMostrarTodos] = useState(false);
+  // Serviço recém-concluído esperando a avaliação do cliente (abre a janela de avaliação)
+  const [paraAvaliar, setParaAvaliar] = useState(null);
 
   const carregar = useCallback(async () => {
     if (!user?.id) return;
@@ -26,6 +30,7 @@ export default function HomeClienteScreen() {
       // Busca apenas os pedidos desse cliente (já vêm do mais recente para o mais antigo)
       const response = await api.get('/pedidos/cliente');
       setPedidos(response.data);
+      setParaAvaliar(await encontrarAvaliacaoPendente(user.id, response.data, 'notaMontador'));
     } catch (error) {
       console.log('Erro ao buscar pedidos no cliente:', error);
     } finally {
@@ -39,6 +44,19 @@ export default function HomeClienteScreen() {
   const handleAtualizar = () => {
     setAtualizando(true);
     carregar();
+  };
+
+  const avaliarMontador = (nota, comentario) =>
+    api.put(`/pedidos/${paraAvaliar.id}/avaliar-montador`, { nota, comentario });
+
+  const handleFecharAvaliacao = async (avaliou) => {
+    if (avaliou) {
+      carregar();
+    } else {
+      // "Agora não": não insiste neste pedido (dá para avaliar depois em Detalhes)
+      await adiarAvaliacao(user.id, paraAvaliar.id);
+      setParaAvaliar(null);
+    }
   };
 
   // Com proposta pendente abre a tela de propostas; nos demais casos, o acompanhamento do pedido
@@ -146,6 +164,17 @@ export default function HomeClienteScreen() {
           })
         )}
       </ScrollView>
+
+      <ModalAvaliacao
+        visivel={!!paraAvaliar}
+        titulo="Seu serviço foi concluído! 🎉"
+        subtitulo={paraAvaliar
+          ? `Como foi a montagem do seu ${paraAvaliar.tipoMovel} com ${paraAvaliar.nomeMontador}?`
+          : ''}
+        placeholder="Conte como foi a montagem (opcional)"
+        onEnviar={avaliarMontador}
+        onFechar={handleFecharAvaliacao}
+      />
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,14 +8,30 @@ import { colors } from '../../theme/colors';
 import api, { enviarImagem, mensagemDeErro } from '../../services/api';
 import { avisar } from '../../services/alerta';
 import { formatarMoeda } from '../../services/statusPedido';
+import { AuthContext } from '../../contexts/AuthContext';
+import { adiarAvaliacao } from '../../services/avaliacoesPendentes';
+import ModalAvaliacao from '../../components/ModalAvaliacao';
 
 export default function ConcluirServicoScreen() {
   const navigation = useNavigation();
   const route = useRoute();
+  const { user } = useContext(AuthContext);
 
   const pedido = route.params?.pedido || {};
   const [fotoUri, setFotoUri] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [concluido, setConcluido] = useState(false);
+
+  const avaliarCliente = (nota, comentario) =>
+    api.put(`/pedidos/${pedido.id}/avaliar-cliente`, { nota, comentario });
+
+  // Avaliou ou tocou "Agora não": volta para a tela inicial. Se pulou, a janela não volta a
+  // aparecer para este pedido (a avaliação continua disponível no Histórico).
+  const handleFecharAvaliacao = async (avaliou) => {
+    if (!avaliou) await adiarAvaliacao(user.id, pedido.id);
+    setConcluido(false);
+    navigation.navigate('HomeMontador');
+  };
 
   // Regra de negócio: a comprovação precisa ser tirada na hora, pela câmera (sem galeria)
   const tirarFoto = async () => {
@@ -52,8 +68,8 @@ export default function ConcluirServicoScreen() {
       await api.put(`/pedidos/${pedido.id}/foto-conclusao`, { fotoUrl });
       await api.put(`/pedidos/${pedido.id}/concluir`);
 
-      avisar('Serviço concluído!', `Parabéns! ${formatarMoeda(pedido.valorMontador)} serão repassados para a sua chave Pix.`);
-      navigation.navigate('HomeMontador');
+      // Com o serviço concluído, já pede a avaliação do cliente
+      setConcluido(true);
     } catch (error) {
       avisar('Erro', mensagemDeErro(error, 'Não foi possível concluir o serviço.'));
     } finally {
@@ -107,6 +123,15 @@ export default function ConcluirServicoScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      <ModalAvaliacao
+        visivel={concluido}
+        titulo="Serviço concluído! 🎉"
+        subtitulo={`${formatarMoeda(pedido.valorMontador)} serão repassados para a sua chave Pix. Como foi atender ${pedido.nomeCliente || 'o cliente'}?`}
+        placeholder="Pontualidade, comunicação, local do serviço... (opcional)"
+        onEnviar={avaliarCliente}
+        onFechar={handleFecharAvaliacao}
+      />
     </View>
   );
 }
