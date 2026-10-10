@@ -45,6 +45,15 @@ namespace MoblyUp.API.Controllers
                 return Ok(new { mensagem = "Perfil atualizado com sucesso!" });
             });
 
+        // Completar cadastro: contas antigas informam o CPF uma única vez
+        [HttpPut("me/cpf")]
+        public Task<IActionResult> CadastrarCpf([FromBody] CadastrarCpfRequest request) =>
+            Executar(async () =>
+            {
+                await _perfilUseCase.CadastrarCpfAsync(User.ObterUsuarioId(), request.Cpf);
+                return Ok(new { mensagem = "CPF cadastrado com sucesso!" });
+            });
+
         // Exclui a conta na API (o app exclui o login no Firebase logo em seguida)
         [HttpDelete("me")]
         public Task<IActionResult> ExcluirConta() =>

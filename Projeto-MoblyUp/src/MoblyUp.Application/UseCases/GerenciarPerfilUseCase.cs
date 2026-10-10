@@ -6,6 +6,7 @@ using MoblyUp.Application.DTOs;
 using MoblyUp.Domain.Entities;
 using MoblyUp.Domain.Enums;
 using MoblyUp.Domain.Interfaces;
+using MoblyUp.Domain.ValueObjects;
 
 namespace MoblyUp.Application.UseCases
 {
@@ -34,12 +35,25 @@ namespace MoblyUp.Application.UseCases
             var existente = await _usuarioRepository.ObterPorIdAsync(id);
             if (existente != null)
             {
+                var alterou = false;
+
                 // Contas antigas ainda não tinham a região salva na API
                 if (!string.IsNullOrWhiteSpace(request.Regiao) && existente.Regiao != request.Regiao.Trim())
                 {
                     existente.DefinirRegiao(request.Regiao);
-                    await _usuarioRepository.AtualizarAsync(existente);
+                    alterou = true;
                 }
+
+                // O app pode sincronizar a conta logo após o login no Firebase, antes do cadastro
+                // enviar o CPF: nesse caso o CPF chega numa segunda chamada e precisa ser gravado
+                if (!existente.PossuiCpf && !string.IsNullOrWhiteSpace(request.Cpf))
+                {
+                    await DefinirCpfAsync(existente, request.Cpf);
+                    alterou = true;
+                }
+
+                if (alterou)
+                    await _usuarioRepository.AtualizarAsync(existente);
                 return false;
             }
 
@@ -51,7 +65,7 @@ namespace MoblyUp.Application.UseCases
 
             var usuario = new Usuario(
                 request.Nome,
-                null, // CPF ainda não é coletado no cadastro do app
+                null,
                 email,
                 "", // Senha vazia pois o Firebase já cuida da segurança
                 "",
@@ -60,8 +74,31 @@ namespace MoblyUp.Application.UseCases
             );
             usuario.DefinirRegiao(request.Regiao);
 
+            // O cadastro do app sempre envia o CPF. Contas antigas (sem CPF) são criadas
+            // mesmo assim e o app exige que completem o cadastro antes de usar.
+            if (!string.IsNullOrWhiteSpace(request.Cpf))
+                await DefinirCpfAsync(usuario, request.Cpf);
+
             await _usuarioRepository.AdicionarAsync(usuario);
             return true;
+        }
+
+        // Completar cadastro: contas criadas antes do CPF ser obrigatório
+        public async Task CadastrarCpfAsync(string id, string cpf)
+        {
+            var usuario = await ObterAtivoAsync(id);
+            await DefinirCpfAsync(usuario, cpf);
+            await _usuarioRepository.AtualizarAsync(usuario);
+        }
+
+        private async Task DefinirCpfAsync(Usuario usuario, string cpf)
+        {
+            var numeros = Cpf.SomenteNumeros(cpf);
+            var dono = await _usuarioRepository.ObterPorCpfAsync(numeros);
+            if (dono != null && dono.Id != usuario.Id)
+                throw new InvalidOperationException("Este CPF já está cadastrado em outra conta.");
+
+            usuario.DefinirCpf(numeros);
         }
 
         public async Task<PerfilResponse?> ObterAsync(string id)
@@ -80,6 +117,8 @@ namespace MoblyUp.Application.UseCases
                 Nome = usuario.Nome,
                 Email = usuario.Email,
                 Tipo = montador ? "montador" : "cliente",
+                CpfCadastrado = usuario.PossuiCpf,
+                CpfMascarado = Cpf.Mascarar(usuario.Cpf),
                 Telefone = string.IsNullOrEmpty(usuario.Telefone) ? null : usuario.Telefone,
                 Regiao = usuario.Regiao,
                 ChavePix = usuario.ChavePix,

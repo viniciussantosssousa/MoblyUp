@@ -6,6 +6,12 @@ namespace MoblyUp.Application.DTOs
         public string? Email { get; set; }
         public string Tipo { get; set; } = string.Empty;
         public string? Regiao { get; set; }
+        public string? Cpf { get; set; }
+    }
+
+    public class CadastrarCpfRequest
+    {
+        public string Cpf { get; set; } = string.Empty;
     }
 
     // Campos nulos não são alterados
@@ -29,6 +35,9 @@ namespace MoblyUp.Application.DTOs
         public string Nome { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Tipo { get; set; } = string.Empty;
+        // O CPF completo nunca sai da API: o app só precisa saber se existe e exibir mascarado
+        public bool CpfCadastrado { get; set; }
+        public string? CpfMascarado { get; set; }
         public string? Telefone { get; set; }
         public string? Regiao { get; set; }
         public string? ChavePix { get; set; }

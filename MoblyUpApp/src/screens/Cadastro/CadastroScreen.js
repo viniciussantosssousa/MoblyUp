@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { styles } from './CadastroStyles';
 import { AuthContext } from '../../contexts/AuthContext';
 import { traduzirErro } from '../../services/erros';
+import { formatarCpf, cpfValido, somenteNumeros } from '../../services/cpf';
 
 export default function CadastroScreen() {
   const navigation = useNavigation();
@@ -19,6 +20,10 @@ export default function CadastroScreen() {
   const [cidadeEstado, setCidadeEstado] = useState('');
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [cadastrando, setCadastrando] = useState(false);
+  const [cpf, setCpf] = useState('');
+
+  // Só avisa depois que os 11 dígitos foram digitados
+  const cpfIncompletoOuInvalido = somenteNumeros(cpf).length === 11 && !cpfValido(cpf);
 
   // Função que busca o CEP automaticamente
   const handleCepChange = async (cepDigitado) => {
@@ -54,8 +59,15 @@ export default function CadastroScreen() {
   };
 
   const handleCadastro = async () => {
-    if (!nome || !email || !senha || !cidadeEstado) {
+    if (!nome || !cpf || !email || !senha || !cidadeEstado) {
       const msg = 'Preencha todos os campos e digite um CEP válido.';
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Atenção', msg);
+      return;
+    }
+
+    // Valida antes de criar o login no Firebase (a API valida de novo e confere se o CPF já existe)
+    if (!cpfValido(cpf)) {
+      const msg = 'CPF inválido. Confira os números digitados.';
       Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Atenção', msg);
       return;
     }
@@ -63,7 +75,7 @@ export default function CadastroScreen() {
     try {
       setCadastrando(true);
       // Passa a string gerada (ex: "Lagoa Formosa - MG") como a região para o Contexto
-      await signUp(email.trim(), senha, nome.trim(), tipo, cidadeEstado);
+      await signUp(email.trim(), senha, nome.trim(), tipo, cidadeEstado, somenteNumeros(cpf));
 
       const msgSucesso = 'Conta criada com sucesso!';
       Platform.OS === 'web' ? window.alert(msgSucesso) : Alert.alert('Bem-vindo!', msgSucesso);
@@ -102,6 +114,19 @@ export default function CadastroScreen() {
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Nome Completo</Text>
           <TextInput style={styles.input} placeholder="Seu nome" value={nome} onChangeText={setNome} />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>CPF</Text>
+          <TextInput
+            style={[styles.input, cpfIncompletoOuInvalido && styles.inputErro]}
+            placeholder="000.000.000-00"
+            keyboardType="numeric"
+            maxLength={14}
+            value={cpf}
+            onChangeText={(texto) => setCpf(formatarCpf(texto))}
+          />
+          {cpfIncompletoOuInvalido && <Text style={styles.erroTexto}>CPF inválido. Confira os números.</Text>}
         </View>
 
         <View style={styles.inputContainer}>

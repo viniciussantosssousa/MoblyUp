@@ -52,7 +52,7 @@ namespace MoblyUp.Tests
         [Fact]
         public void Excluir_conta_apaga_dados_pessoais_e_libera_o_email()
         {
-            var montador = new Usuario("Fulano", "12345678901", "fulano@teste.com", "", "34999998888", TipoPerfil.Montador, "m-1");
+            var montador = new Usuario("Fulano", "529.982.247-25", "fulano@teste.com", "", "34999998888", TipoPerfil.Montador, "m-1");
             montador.DefinirDadosBancarios("fulano@pix.com");
             montador.RegistrarPushToken("ExponentPushToken[abc]");
 

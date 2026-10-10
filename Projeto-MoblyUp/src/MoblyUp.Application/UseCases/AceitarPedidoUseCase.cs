@@ -28,6 +28,9 @@ namespace MoblyUp.Application.UseCases
             if (montador == null || montador.Perfil != TipoPerfil.Montador)
                 throw new UnauthorizedAccessException("Apenas montadores cadastrados podem enviar propostas.");
 
+            if (!montador.PossuiCpf)
+                throw new Exception("Cadastre seu CPF no Perfil antes de enviar propostas.");
+
             if (string.IsNullOrWhiteSpace(montador.ChavePix))
                 throw new Exception("Cadastre sua chave Pix no Perfil antes de enviar propostas.");
 

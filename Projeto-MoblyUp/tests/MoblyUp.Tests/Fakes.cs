@@ -70,14 +70,31 @@ namespace MoblyUp.Tests
     {
         public const string Endereco = "Rua A, 10, Centro - Uberaba - MG";
 
-        public static Usuario Cliente(string id = "cliente-1") =>
-            new("Cliente", null, $"{id}@teste.com", "", "", TipoPerfil.Cliente, id);
+        public static Usuario Cliente(string id = "cliente-1", bool comCpf = true) =>
+            new("Cliente", comCpf ? GerarCpf(id) : null, $"{id}@teste.com", "", "", TipoPerfil.Cliente, id);
 
-        public static Usuario Montador(string id = "montador-1", bool comPix = true)
+        public static Usuario Montador(string id = "montador-1", bool comPix = true, bool comCpf = true)
         {
-            var montador = new Usuario("Montador", null, $"{id}@teste.com", "", "", TipoPerfil.Montador, id);
+            var montador = new Usuario("Montador", comCpf ? GerarCpf(id) : null, $"{id}@teste.com", "", "", TipoPerfil.Montador, id);
             if (comPix) montador.DefinirDadosBancarios($"{id}@pix.com");
             return montador;
+        }
+
+        // Gera um CPF válido e estável a partir de um texto (cada usuário de teste tem o seu)
+        public static string GerarCpf(string semente)
+        {
+            var hash = (uint)semente.Aggregate(17, (acc, c) => acc * 31 + c);
+            var digitos = (100_000_000 + hash % 800_000_000).ToString().Select(c => c - '0').ToList();
+
+            for (var tamanho = 9; tamanho <= 10; tamanho++)
+            {
+                var soma = 0;
+                for (var i = 0; i < tamanho; i++) soma += digitos[i] * (tamanho + 1 - i);
+                var resto = soma % 11;
+                digitos.Add(resto < 2 ? 0 : 11 - resto);
+            }
+
+            return string.Concat(digitos);
         }
 
         public static PedidoMontagem Pedido(string clienteId = "cliente-1") =>

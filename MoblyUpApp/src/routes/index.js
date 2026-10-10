@@ -24,6 +24,7 @@ import ConcluirServicoScreen from '../screens/ConcluirServico/ConcluirServicoScr
 
 // Telas Comuns
 import PerfilScreen from '../screens/Perfil/PerfilScreen';
+import CompletarCadastroScreen from '../screens/CompletarCadastro/CompletarCadastroScreen';
 
 const Stack = createNativeStackNavigator();
 const navigationRef = createNavigationContainerRef();
@@ -51,9 +52,13 @@ export default function Routes() {
     return () => subscription.remove();
   }, []);
 
+  // Conta antiga sem CPF: só libera o app depois de completar o cadastro.
+  // "undefined" (API ainda não respondeu) não bloqueia; só o "false" confirmado pela API.
+  const cpfPendente = signed && user?.cpfCadastrado === false;
+
   // Abre a tela certa assim que o usuário estiver logado e a navegação pronta
   useEffect(() => {
-    if (!pedidoDaNotificacao || !signed || !navegacaoPronta) return;
+    if (!pedidoDaNotificacao || !signed || !navegacaoPronta || cpfPendente) return;
 
     if (user?.tipo === 'cliente') {
       navigationRef.navigate('DetalhesPedido', { pedido: { id: pedidoDaNotificacao } });
@@ -62,7 +67,7 @@ export default function Routes() {
       navigationRef.navigate('HomeMontador');
     }
     setPedidoDaNotificacao(null);
-  }, [pedidoDaNotificacao, signed, navegacaoPronta, user?.tipo]);
+  }, [pedidoDaNotificacao, signed, navegacaoPronta, cpfPendente, user?.tipo]);
 
   if (loading) {
     return (
@@ -81,6 +86,8 @@ export default function Routes() {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Cadastro" component={CadastroScreen} />
           </>
+        ) : cpfPendente ? (
+          <Stack.Screen name="CompletarCadastro" component={CompletarCadastroScreen} />
         ) : (
           user?.tipo === 'cliente' ? (
             <>

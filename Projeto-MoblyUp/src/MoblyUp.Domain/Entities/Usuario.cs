@@ -24,17 +24,33 @@ namespace MoblyUp.Domain.Entities
         // Token do Expo Push do aparelho em que o usuário está logado
         public string? ExpoPushToken { get; private set; }
 
-        public Usuario(string nome, string? cpf, string email,string senhaHash, string telefone, TipoPerfil perfil, string? id = null)
+        public Usuario(string nome, string? cpf, string email, string senhaHash, string telefone, TipoPerfil perfil, string? id = null)
         {
-            Id = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString() : id; 
+            Id = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString() : id;
             Nome = nome;
-            Cpf = cpf;
             Email = email;
             SenhaHash = senhaHash;
             Telefone = telefone;
             Perfil = perfil;
-            DataCadastro = DateTime.UtcNow; 
+            DataCadastro = DateTime.UtcNow;
             Ativo = true;
+
+            if (cpf != null)
+                DefinirCpf(cpf);
+        }
+
+        public bool PossuiCpf => !string.IsNullOrEmpty(Cpf);
+
+        // O CPF identifica a pessoa: é informado uma única vez e não pode ser trocado depois
+        public void DefinirCpf(string cpf)
+        {
+            if (PossuiCpf)
+                throw new InvalidOperationException("O CPF já foi cadastrado e não pode ser alterado.");
+
+            if (!ValueObjects.Cpf.Valido(cpf))
+                throw new InvalidOperationException("CPF inválido. Confira os números digitados.");
+
+            Cpf = ValueObjects.Cpf.SomenteNumeros(cpf);
         }
 
         public void AtualizarNome(string nome)

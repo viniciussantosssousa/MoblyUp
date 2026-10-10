@@ -27,6 +27,9 @@ namespace MoblyUp.Application.UseCases
             if (cliente == null || cliente.Perfil != TipoPerfil.Cliente)
                 throw new UnauthorizedAccessException("Apenas clientes cadastrados podem solicitar montagens.");
 
+            if (!cliente.PossuiCpf)
+                throw new Exception("Cadastre seu CPF no Perfil antes de solicitar uma montagem.");
+
             if (string.IsNullOrWhiteSpace(request.TipoMovel) || string.IsNullOrWhiteSpace(request.EnderecoServico))
                 throw new Exception("Informe o tipo do móvel e o endereço do serviço.");
 

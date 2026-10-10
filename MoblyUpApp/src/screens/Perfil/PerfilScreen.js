@@ -301,6 +301,12 @@ export default function PerfilScreen() {
           </View>
 
           <View style={styles.inputContainer}>
+            <Text style={styles.label}>CPF</Text>
+            <TextInput style={[styles.input, styles.inputDisabled]} value={perfil?.cpfMascarado || 'Não informado'} editable={false} />
+            <Text style={styles.helperText}>O CPF não pode ser alterado.</Text>
+          </View>
+
+          <View style={styles.inputContainer}>
             <Text style={styles.label}>Telefone / WhatsApp</Text>
             <TextInput
               style={styles.input}

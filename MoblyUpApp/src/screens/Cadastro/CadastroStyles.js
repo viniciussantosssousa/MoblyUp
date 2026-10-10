@@ -2,6 +2,14 @@ import { StyleSheet, Platform } from 'react-native';
 import { colors } from '../../theme/colors';
 
 export const styles = StyleSheet.create({
+  inputErro: {
+    borderColor: '#E53E3E',
+  },
+  erroTexto: {
+    fontSize: 12,
+    color: '#E53E3E',
+    marginTop: 4,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,

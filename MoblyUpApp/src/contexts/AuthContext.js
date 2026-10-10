@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, db } from '../services/firebaseConfig'; // <-- Importando o db
 import { 
@@ -37,29 +37,60 @@ const sincronizarComApi = async (userData) => {
   }
 };
 
+// Dados que ficam só na API: foto de perfil e se o CPF já foi cadastrado.
+// Retorna {} se a API não responder (o app segue com o que tem salvo).
+const carregarDadosDaApi = async () => {
+  try {
+    const { data } = await api.get('/usuarios/me');
+    return { fotoPerfilUrl: data.fotoPerfilUrl, cpfCadastrado: data.cpfCadastrado };
+  } catch (error) {
+    console.log('Não foi possível carregar o perfil da API:', error);
+    return {};
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Durante o cadastro, quem sincroniza com a API é o próprio signUp (com o CPF)
+  const cadastrandoRef = useRef(false);
+
+  const salvarUsuario = async (userData) => {
+    setUser(userData);
+    await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(userData));
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
+        if (cadastrandoRef.current) return;
+
         if (firebaseUser) {
           const storedUser = await AsyncStorage.getItem('@MoblyUp:user');
+          let userData = null;
+
           if (storedUser) {
-            const userData = JSON.parse(storedUser);
+            userData = JSON.parse(storedUser);
             setUser(userData);
-            sincronizarComApi(userData);
           } else {
             // Se não tem no AsyncStorage, busca do Firestore
-            const docRef = doc(db, 'usuarios', firebaseUser.uid);
-            const docSnap = await getDoc(docRef);
+            const docSnap = await getDoc(doc(db, 'usuarios', firebaseUser.uid));
             if (docSnap.exists()) {
-              const userData = { id: firebaseUser.uid, ...docSnap.data() };
-              setUser(userData);
-              await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(userData));
-              sincronizarComApi(userData);
+              userData = { id: firebaseUser.uid, ...docSnap.data() };
+              await salvarUsuario(userData);
             }
+          }
+
+          if (userData) {
+            // Em segundo plano: o app abre com os dados salvos e atualiza quando a API responder
+            const dadosLocais = userData;
+            (async () => {
+              await sincronizarComApi(dadosLocais);
+              const dadosApi = await carregarDadosDaApi();
+              // Se o usuário saiu enquanto a API respondia, não "reloga" a tela
+              const aindaLogado = auth.currentUser?.uid === dadosLocais.id;
+              if (aindaLogado && Object.keys(dadosApi).length) await salvarUsuario({ ...dadosLocais, ...dadosApi });
+            })();
           }
         } else {
           setUser(null);
@@ -75,40 +106,40 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, []);
 
-  // CADASTRO: Salva na Autenticação E no Banco de Dados
-  const signUp = async (email, senha, nome, tipoUsuario, regiao) => {
-    // 1. Cria a conta (E-mail e Senha)
-    const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
-    const uid = userCredential.user.uid;
-    
-    const newUser = {
-      id: uid,
-      nome: nome,
-      email: email,
-      tipo: tipoUsuario,
-      regiao: regiao 
-    };
-
-    // 2. Salva o perfil no Firestore, na coleção 'usuarios', usando o UID como chave
+  // CADASTRO: Firebase (login) -> Firestore (perfil) -> API (dados completos, incluindo o CPF).
+  // Se qualquer etapa falhar, desfaz as anteriores para não deixar conta pela metade.
+  const signUp = async (email, senha, nome, tipoUsuario, regiao, cpf) => {
+    cadastrandoRef.current = true;
     try {
-      await setDoc(doc(db, 'usuarios', uid), {
-        nome: nome,
-        email: email,
-        tipo: tipoUsuario,
-        regiao: regiao
-      });
-    } catch (error) {
-      // Sem perfil a conta fica inutilizável e o e-mail "preso": desfaz o login recém-criado
-      await userCredential.user.delete().catch(() => {});
-      throw error;
+      // 1. Cria a conta (E-mail e Senha)
+      const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+      const uid = userCredential.user.uid;
+      const desfazerLogin = () => userCredential.user.delete().catch(() => {});
+
+      // 2. Salva o perfil no Firestore, na coleção 'usuarios', usando o UID como chave
+      try {
+        await setDoc(doc(db, 'usuarios', uid), { nome, email, tipo: tipoUsuario, regiao });
+      } catch (error) {
+        await desfazerLogin();
+        throw error;
+      }
+
+      // 3. Cria o usuário na API com o CPF (a API valida o CPF e recusa CPF já usado)
+      try {
+        await api.post('/usuarios', { nome, email, tipo: tipoUsuario, regiao, cpf });
+      } catch (error) {
+        await deleteDoc(doc(db, 'usuarios', uid)).catch(() => {});
+        await desfazerLogin();
+        throw error;
+      }
+
+      await registrarNotificacoes();
+
+      // 4. Atualiza o app
+      await salvarUsuario({ id: uid, nome, email, tipo: tipoUsuario, regiao, cpfCadastrado: true });
+    } finally {
+      cadastrandoRef.current = false;
     }
-
-    // 3. Cria o mesmo usuário no banco da API (SQL Server)
-    await sincronizarComApi(newUser);
-
-    // 4. Atualiza o app
-    setUser(newUser);
-    await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(newUser));
   };
 
   // LOGIN: Valida a senha e puxa o perfil da nuvem
@@ -126,16 +157,8 @@ export const AuthProvider = ({ children }) => {
       // Cobre contas criadas antes da sincronização existir
       await sincronizarComApi(userData);
 
-      // A foto de perfil fica só na API
-      try {
-        const { data } = await api.get('/usuarios/me');
-        userData.fotoPerfilUrl = data.fotoPerfilUrl;
-      } catch (error) {
-        console.log('Não foi possível carregar a foto do perfil:', error);
-      }
-
-      setUser(userData);
-      await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(userData));
+      // Foto de perfil e situação do CPF ficam só na API
+      await salvarUsuario({ ...userData, ...(await carregarDadosDaApi()) });
     } else {
       // Login existe mas o perfil não (cadastro interrompido): não deixa o usuário "meio logado"
       await firebaseSignOut(auth);
@@ -183,6 +206,12 @@ export const AuthProvider = ({ children }) => {
     await reauthenticateWithCredential(auth.currentUser, credencial);
   };
 
+  // Completar cadastro: contas criadas antes do CPF ser obrigatório
+  const completarCpf = async (cpf) => {
+    await api.put('/usuarios/me/cpf', { cpf });
+    await salvarUsuario({ ...user, cpfCadastrado: true });
+  };
+
   const changePassword = async (senhaAtual, novaSenha) => {
     await reautenticar(senhaAtual);
     await updatePassword(auth.currentUser, novaSenha);
@@ -208,7 +237,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider value={{
       signed: !!user, user, loading,
       signIn, signUp, signOut,
-      updateUser, changePassword, resetPassword, deleteAccount,
+      updateUser, completarCpf, changePassword, resetPassword, deleteAccount,
     }}>
       {children}
     </AuthContext.Provider>
