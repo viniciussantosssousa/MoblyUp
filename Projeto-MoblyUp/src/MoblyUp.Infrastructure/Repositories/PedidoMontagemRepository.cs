@@ -21,12 +21,15 @@ namespace MoblyUp.Infrastructure.Repositories
 
         public async Task<PedidoMontagem?> ObterPorIdAsync(Guid id)
         {
-            return await _context.PedidosMontagem.FirstOrDefaultAsync(p => p.Id == id);
+            return await _context.PedidosMontagem
+                .Include(p => p.Montador)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task<IEnumerable<PedidoMontagem>> ObterPorClienteIdAsync(string clienteId)
         {
             return await _context.PedidosMontagem
+                .Include(p => p.Montador)
                 .Where(p => p.ClienteId == clienteId)
                 .ToListAsync();
         }

@@ -151,7 +151,6 @@ namespace MoblyUp.Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Cpf")
-                        .IsRequired()
                         .HasMaxLength(11)
                         .HasColumnType("nvarchar(11)");
 
@@ -189,7 +188,8 @@ namespace MoblyUp.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Cpf")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Cpf] IS NOT NULL");
 
                     b.HasIndex("Email")
                         .IsUnique();

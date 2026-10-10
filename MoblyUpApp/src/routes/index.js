@@ -19,6 +19,7 @@ import VerPropostasScreen from '../screens/VerPropostas/VerPropostasScreen';
 import HomeMontadorScreen from '../screens/HomeMontador/HomeMontadorScreen';
 import HistoricoMontadorScreen from '../screens/HistoricoMontador/HistoricoMontadorScreen';
 import EnviarPropostaScreen from '../screens/EnviarProposta/EnviarPropostaScreen';
+import ConcluirServicoScreen from '../screens/ConcluirServico/ConcluirServicoScreen';
 
 // Telas Comuns
 import PerfilScreen from '../screens/Perfil/PerfilScreen';
@@ -59,6 +60,7 @@ export default function Routes() {
               <Stack.Screen name="HomeMontador" component={HomeMontadorScreen} />
               <Stack.Screen name="HistoricoMontador" component={HistoricoMontadorScreen} />
               <Stack.Screen name="EnviarProposta" component={EnviarPropostaScreen} />
+              <Stack.Screen name="ConcluirServico" component={ConcluirServicoScreen} />
               <Stack.Screen name="Perfil" component={PerfilScreen} />
             </>
           )

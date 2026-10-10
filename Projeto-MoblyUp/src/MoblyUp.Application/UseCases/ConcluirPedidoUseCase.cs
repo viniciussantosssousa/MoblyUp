@@ -13,12 +13,15 @@ namespace MoblyUp.Application.UseCases
             _pedidoRepository = pedidoRepository;
         }
 
-        public async Task ExecutarAsync(Guid pedidoId)
+        public async Task ExecutarAsync(Guid pedidoId, string montadorId)
         {
             var pedido = await _pedidoRepository.ObterPorIdAsync(pedidoId);
-            
+
             if (pedido == null)
                 throw new Exception("Pedido não encontrado.");
+
+            if (pedido.MontadorId != montadorId)
+                throw new UnauthorizedAccessException("Apenas o montador responsável pode concluir o pedido.");
 
             pedido.ConcluirPedido();
 

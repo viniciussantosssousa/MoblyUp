@@ -92,6 +92,37 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  pagamentoInfo: {
+    textAlign: 'center',
+    color: '#718096',
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  rejectButton: {
+    borderWidth: 1,
+    borderColor: '#E53E3E',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  rejectButtonText: {
+    color: '#E53E3E',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+    padding: 8,
+  },
+  refreshButtonText: {
+    color: colors.primary,
+    fontWeight: 'bold',
+    marginLeft: 6,
+  },
   emptyText: {
     textAlign: 'center',
     color: '#718096',

@@ -1,62 +1,87 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import * as Notifications from 'expo-notifications';
 import { styles } from './VerPropostasStyles';
 import { colors } from '../../theme/colors';
+import { AuthContext } from '../../contexts/AuthContext';
+import api, { mensagemDeErro } from '../../services/api';
+import { avisar, confirmar } from '../../services/alerta';
+import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
 
 export default function VerPropostasScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  
-  const pedido = route.params?.pedido || {};
-  
-  const [propostas, setPropostas] = useState([]);
+  const { user } = useContext(AuthContext);
+
+  const pedidoId = route.params?.pedido?.id;
+
+  const [pedido, setPedido] = useState(route.params?.pedido || {});
   const [loading, setLoading] = useState(true);
+  const [processando, setProcessando] = useState(false);
+
+  const carregarPedido = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/pedidos/${pedidoId}`);
+      setPedido(response.data);
+
+      // Depois do aceite, o acompanhamento (pagamento, execução) fica na tela de detalhes
+      if (response.data.status > STATUS_PEDIDO.AGUARDANDO_APROVACAO_CLIENTE) {
+        navigation.replace('DetalhesPedido', { pedido: response.data });
+      }
+    } catch (error) {
+      avisar('Erro', mensagemDeErro(error, 'Não foi possível carregar o pedido.'));
+    } finally {
+      setLoading(false);
+    }
+  }, [pedidoId, navigation]);
 
   useEffect(() => {
-    const fetchPropostas = async () => {
-      try {
-        setLoading(true);
-        
-        // Exemplo de integração futura:
-        // const response = await fetch(`http://COLOQUE_SEU_IP_AQUI:5007/api/propostas/pedido/${pedido.id}`);
-        // if (response.ok) {
-        //   const data = await response.json();
-        //   setPropostas(data);
-        // }
+    if (pedidoId) carregarPedido();
+  }, [pedidoId, carregarPedido]);
 
-        setPropostas([]); 
-      } catch (error) {
-        console.log('Erro ao buscar propostas:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleAceitar = async () => {
+    const ok = await confirmar(
+      'Aceitar proposta',
+      `Aceitar a proposta de ${formatarMoeda(pedido.valorProposto)} de ${pedido.nomeMontador}?`,
+      'Aceitar'
+    );
+    if (!ok) return;
 
-    fetchPropostas();
-  }, [pedido.id]);
-
-  const handleAceitarProposta = async (proposta) => {
     try {
-      // Exemplo de integração futura para confirmar o aceite:
-      // await fetch(`http://COLOQUE_SEU_IP_AQUI:5007/api/propostas/${proposta.id}/aceitar`, { method: 'POST' });
-
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "Proposta Aceita! 🎉",
-          body: `O cliente aceitou sua oferta. Prepare-se para a montagem!`,
-        },
-        trigger: null, 
-      });
-
-      Alert.alert('Sucesso', 'Você aceitou esta proposta! O montador foi notificado e entrará em contato.');
-      navigation.navigate('HomeCliente');
+      setProcessando(true);
+      await api.put(`/pedidos/${pedidoId}/aceitar-proposta`, { clienteId: user.id });
+      avisar('Proposta aceita!', 'Agora realize o pagamento para liberar o montador.');
+      await carregarPedido();
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível aceitar a proposta no momento.');
+      avisar('Erro', mensagemDeErro(error, 'Não foi possível aceitar a proposta no momento.'));
+    } finally {
+      setProcessando(false);
     }
   };
+
+  const handleRecusar = async () => {
+    const ok = await confirmar(
+      'Recusar proposta',
+      'O pedido voltará a ficar disponível para outros montadores. Deseja recusar?',
+      'Recusar'
+    );
+    if (!ok) return;
+
+    try {
+      setProcessando(true);
+      await api.put(`/pedidos/${pedidoId}/recusar-proposta`, { clienteId: user.id });
+      avisar('Proposta recusada', 'Seu pedido voltou a ficar visível para os montadores da região.');
+      await carregarPedido();
+    } catch (error) {
+      avisar('Erro', mensagemDeErro(error, 'Não foi possível recusar a proposta no momento.'));
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const temProposta = pedido.status === STATUS_PEDIDO.AGUARDANDO_APROVACAO_CLIENTE;
 
   return (
     <View style={styles.container}>
@@ -68,37 +93,46 @@ export default function VerPropostasScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>Montadores Interessados</Text>
+        <Text style={styles.sectionTitle}>{pedido.tipoMovel} {pedido.tamanhoMovel ? `· ${pedido.tamanhoMovel}` : ''}</Text>
 
         {loading ? (
           <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
-        ) : propostas.length === 0 ? (
-          <Text style={styles.emptyText}>Nenhum montador enviou proposta para este pedido ainda. Aguarde mais um pouco.</Text>
+        ) : !temProposta ? (
+          <View>
+            <Text style={styles.emptyText}>Nenhum montador enviou proposta para este pedido ainda. Aguarde mais um pouco.</Text>
+            <TouchableOpacity style={styles.refreshButton} onPress={carregarPedido}>
+              <Ionicons name="refresh" size={18} color={colors.primary} />
+              <Text style={styles.refreshButtonText}>Atualizar</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
-          propostas.map((proposta) => (
-            <View key={proposta.id} style={styles.propostaCard}>
-              <View style={styles.montadorInfoRow}>
-                <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
-                <Text style={styles.montadorNome}>{proposta.nomeMontador}</Text>
-                <View style={styles.avaliacaoContainer}>
-                  <Ionicons name="star" size={12} color="#D69E2E" />
-                  <Text style={styles.avaliacaoTexto}>{proposta.avaliacaoMedia}</Text>
-                </View>
-              </View>
-
-              <Text style={styles.valorProposta}>
-                R$ {parseFloat(proposta.valorTotalCobrado).toFixed(2).replace('.', ',')}
-              </Text>
-
-              <TouchableOpacity 
-                style={styles.acceptButton}
-                activeOpacity={0.8}
-                onPress={() => handleAceitarProposta(proposta)}
-              >
-                <Text style={styles.acceptButtonText}>Aceitar Montador</Text>
-              </TouchableOpacity>
+          <View style={styles.propostaCard}>
+            <View style={styles.montadorInfoRow}>
+              <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
+              <Text style={styles.montadorNome}>{pedido.nomeMontador || 'Montador'}</Text>
             </View>
-          ))
+
+            <Text style={styles.valorProposta}>{formatarMoeda(pedido.valorProposto)}</Text>
+            <Text style={styles.pagamentoInfo}>Pagamento via PIX após o aceite</Text>
+
+            <TouchableOpacity
+              style={[styles.acceptButton, processando && { opacity: 0.6 }]}
+              activeOpacity={0.8}
+              disabled={processando}
+              onPress={handleAceitar}
+            >
+              <Text style={styles.acceptButtonText}>Aceitar Montador</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.rejectButton}
+              activeOpacity={0.8}
+              disabled={processando}
+              onPress={handleRecusar}
+            >
+              <Text style={styles.rejectButtonText}>Recusar Proposta</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </ScrollView>
     </View>

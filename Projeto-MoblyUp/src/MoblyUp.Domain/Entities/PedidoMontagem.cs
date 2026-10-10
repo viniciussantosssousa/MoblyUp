@@ -46,6 +46,12 @@ namespace MoblyUp.Domain.Entities
             if (Status != StatusPedido.Disponivel)
                 throw new Exception("Este pedido não está mais disponível para propostas.");
 
+            if (valorProposto <= 0)
+                throw new Exception("O valor da proposta deve ser maior que zero.");
+
+            if (montadorId == ClienteId)
+                throw new Exception("Você não pode enviar proposta para o seu próprio pedido.");
+
             MontadorId = montadorId;
             ValorProposto = valorProposto;
 
@@ -93,6 +99,8 @@ namespace MoblyUp.Domain.Entities
 
         public void ConcluirPedido()
         {
+            if (Status != StatusPedido.EmAndamento)
+                throw new Exception("Apenas pedidos em andamento podem ser concluídos.");
             if (string.IsNullOrEmpty(FotoConclusaoUrl))
                 throw new Exception("É necessário enviar a foto antes de concluir.");
             Status = StatusPedido.Concluido;

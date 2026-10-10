@@ -5,38 +5,37 @@ import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { styles } from './HomeMontadorStyles';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../contexts/AuthContext';
-import api from '../../services/api'; 
+import api from '../../services/api';
+import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
+
+// Serviços do montador que ainda exigem acompanhamento
+const STATUS_ATIVOS = [
+  STATUS_PEDIDO.AGUARDANDO_APROVACAO_CLIENTE,
+  STATUS_PEDIDO.AGUARDANDO_PAGAMENTO,
+  STATUS_PEDIDO.EM_ANDAMENTO,
+];
 
 export default function HomeMontadorScreen() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const { user } = useContext(AuthContext);
-  
+
   const [pedidosDisponiveis, setPedidosDisponiveis] = useState([]);
+  const [meusServicos, setMeusServicos] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPedidos = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/pedidos');
-        
-        // 1. Pega a região do montador logado (ex: "lagoa formosa - mg")
-        const minhaRegiao = user?.regiao ? user.regiao.toLowerCase() : '';
+        // A API já devolve só os pedidos abertos da região do montador (ex: "Lagoa Formosa - MG")
+        const [disponiveis, meus] = await Promise.all([
+          api.get('/pedidos/disponiveis', { params: { regiao: user?.regiao } }),
+          api.get(`/pedidos/montador/${user.id}`),
+        ]);
+        setPedidosDisponiveis(disponiveis.data);
+        setMeusServicos(meus.data.filter(p => STATUS_ATIVOS.includes(p.status)));
 
-        // 2. Filtra a lista que veio do banco de dados
-        const pedidosFiltrados = response.data.filter(pedido => {
-          const isPendente = pedido.status === 'Pendente' || pedido.status === 0 || pedido.status == null;
-          
-          // Pega o endereço do pedido (que agora tem a cidade no final)
-          const enderecoPedido = pedido.enderecoServico ? pedido.enderecoServico.toLowerCase() : '';
-          
-          // Retorna apenas se for pendente E se a cidade do pedido bater com a cidade do montador
-          return isPendente && enderecoPedido.includes(minhaRegiao);
-        });
-        
-        setPedidosDisponiveis(pedidosFiltrados);
-        
       } catch (error) {
         console.log('Erro ao buscar pedidos no montador:', error);
       } finally {
@@ -44,10 +43,10 @@ export default function HomeMontadorScreen() {
       }
     };
 
-    if (isFocused) {
+    if (isFocused && user?.id) {
       fetchPedidos();
     }
-  }, [isFocused, user?.regiao]);
+  }, [isFocused, user?.id, user?.regiao]);
 
   return (
     <View style={styles.container}>
@@ -68,6 +67,54 @@ export default function HomeMontadorScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {!loading && meusServicos.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Meus Serviços</Text>
+            </View>
+
+            {meusServicos.map((pedido) => {
+              const liberado = pedido.status === STATUS_PEDIDO.EM_ANDAMENTO;
+              return (
+                <View key={pedido.id} style={styles.orderCard}>
+                  <View style={styles.orderHeader}>
+                    <Text style={styles.orderTitle}>{pedido.tipoMovel}</Text>
+                    <View style={[styles.distanceBadge, liberado && styles.badgeLiberado]}>
+                      <Text style={[styles.distanceText, liberado && styles.badgeLiberadoText]}>{pedido.statusDescricao}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.orderDetailRow}>
+                    <Ionicons name="location-outline" size={16} color="#718096" />
+                    <Text style={styles.orderDetailText}>{pedido.enderecoServico}</Text>
+                  </View>
+
+                  <View style={styles.orderDetailRow}>
+                    <Ionicons name="cash-outline" size={16} color="#718096" />
+                    <Text style={styles.orderDetailText}>Você recebe {formatarMoeda(pedido.valorMontador)}</Text>
+                  </View>
+
+                  {liberado ? (
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      activeOpacity={0.8}
+                      onPress={() => navigation.navigate('ConcluirServico', { pedido })}
+                    >
+                      <Text style={styles.actionButtonText}>Finalizar com Foto</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <Text style={styles.aguardandoText}>
+                      {pedido.status === STATUS_PEDIDO.AGUARDANDO_PAGAMENTO
+                        ? 'Proposta aceita! Aguarde a confirmação do pagamento.'
+                        : 'Aguardando o cliente responder sua proposta.'}
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
+          </>
+        )}
+
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Novas Solicitações</Text>
         </View>

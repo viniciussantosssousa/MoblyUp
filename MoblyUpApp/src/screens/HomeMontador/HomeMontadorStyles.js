@@ -97,6 +97,18 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  badgeLiberado: {
+    backgroundColor: '#F0FFF4',
+  },
+  badgeLiberadoText: {
+    color: '#38A169',
+  },
+  aguardandoText: {
+    fontSize: 13,
+    color: '#D69E2E',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
   emptyText: {
     textAlign: 'center',
     color: '#718096',

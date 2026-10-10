@@ -5,6 +5,10 @@ obj/
 *.user
 *.suo
 
+# Fotos enviadas pelo app (mantém só a pasta)
+**/wwwroot/uploads/*
+!**/wwwroot/uploads/.gitkeep
+
 # Node / Expo
 node_modules/
 .expo/

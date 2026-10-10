@@ -29,6 +29,8 @@ builder.Services.AddScoped<CriarPedidoMontagemUseCase>();
 builder.Services.AddScoped<AceitarPedidoUseCase>();
 builder.Services.AddScoped<EnviarFotoConclusaoUseCase>();
 builder.Services.AddScoped<ConcluirPedidoUseCase>();
+builder.Services.AddScoped<ConsultarPedidosUseCase>();
+builder.Services.AddScoped<ResponderPropostaUseCase>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -45,7 +47,14 @@ if (app.Environment.IsDevelopment())
 // Ativando a política de CORS antes do roteamento
 app.UseCors("AllowAll");
 
-app.UseHttpsRedirection();
+// Serve as fotos enviadas pelo app (wwwroot/uploads)
+app.UseStaticFiles();
+
+// Em desenvolvimento o app no celular acessa a API por HTTP na rede local
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseAuthorization();
 app.MapControllers();
 

@@ -1,24 +1,54 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { styles } from './PerfilStyles';
 import { colors } from '../../theme/colors';
-import { AuthContext } from '../../contexts/AuthContext'; 
+import { AuthContext } from '../../contexts/AuthContext';
+import api, { mensagemDeErro } from '../../services/api';
+import { avisar } from '../../services/alerta';
 
 export default function PerfilScreen() {
   const navigation = useNavigation();
-  const { user, signOut, updateUser } = useContext(AuthContext); 
-  
+  const { user, signOut, updateUser } = useContext(AuthContext);
+  const isMontador = user?.tipo === 'montador';
+
   const [nome, setNome] = useState(user?.nome || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const [chavePix, setChavePix] = useState('');
   const [senha, setSenha] = useState('');
+  const [salvando, setSalvando] = useState(false);
+
+  // A chave Pix fica só no back-end (usada para os repasses ao montador)
+  useEffect(() => {
+    if (!isMontador || !user?.id) return;
+    api.get(`/usuarios/${user.id}`)
+      .then(response => setChavePix(response.data.chavePix || ''))
+      .catch(error => console.log('Erro ao carregar perfil:', error));
+  }, [isMontador, user?.id]);
 
   const handleSalvar = async () => {
-    // Salva direto, sem pedir código
-    await updateUser({ nome, email });
-    Alert.alert('Sucesso', 'Seus dados foram atualizados com sucesso!');
-    navigation.goBack(); 
+    if (!nome.trim()) {
+      avisar('Atenção', 'O nome não pode ficar vazio.');
+      return;
+    }
+    if (senha && senha.length < 6) {
+      avisar('Atenção', 'A nova senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    try {
+      setSalvando(true);
+      await updateUser({ nome: nome.trim(), chavePix: isMontador ? chavePix : null, senha });
+      avisar('Sucesso', 'Seus dados foram atualizados com sucesso!');
+      navigation.goBack();
+    } catch (error) {
+      const msg = error?.code === 'auth/requires-recent-login'
+        ? 'Por segurança, saia e entre novamente no app antes de trocar a senha.'
+        : mensagemDeErro(error, 'Não foi possível salvar as alterações.');
+      avisar('Erro', msg);
+    } finally {
+      setSalvando(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -80,16 +110,29 @@ export default function PerfilScreen() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>E-mail</Text>
-            <TextInput style={styles.input} value={email} keyboardType="email-address" autoCapitalize="none" onChangeText={setEmail} />
+            <TextInput style={[styles.input, { backgroundColor: '#f1f5f9', color: '#64748b' }]} value={user?.email || ''} editable={false} />
           </View>
+
+          {isMontador && (
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Chave Pix (para receber os repasses)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="CPF, e-mail, telefone ou chave aleatória"
+                autoCapitalize="none"
+                value={chavePix}
+                onChangeText={setChavePix}
+              />
+            </View>
+          )}
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Nova Senha</Text>
             <TextInput style={styles.input} placeholder="Digite para alterar..." secureTextEntry value={senha} onChangeText={setSenha} />
           </View>
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSalvar}>
-            <Text style={styles.saveButtonText}>Salvar Alterações</Text>
+          <TouchableOpacity style={[styles.saveButton, salvando && { opacity: 0.6 }]} onPress={handleSalvar} disabled={salvando}>
+            <Text style={styles.saveButtonText}>{salvando ? 'Salvando...' : 'Salvar Alterações'}</Text>
           </TouchableOpacity>
         </View>
 

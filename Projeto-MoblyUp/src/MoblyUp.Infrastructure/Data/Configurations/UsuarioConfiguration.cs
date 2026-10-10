@@ -16,8 +16,10 @@ namespace MoblyUp.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(150);
 
+            // CPF opcional: usuários vindos do Firebase ainda não informam CPF.
+            // O índice único ignora valores nulos.
             builder.Property(u => u.Cpf)
-                .IsRequired()
+                .IsRequired(false)
                 .HasMaxLength(11);
 
             builder.Property(u => u.Email)

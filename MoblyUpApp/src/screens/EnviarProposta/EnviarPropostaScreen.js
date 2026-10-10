@@ -1,19 +1,30 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useContext } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import * as Notifications from 'expo-notifications';
 import { styles } from './EnviarPropostaStyles';
 import { colors } from '../../theme/colors';
+import { AuthContext } from '../../contexts/AuthContext';
+import api, { mensagemDeErro } from '../../services/api';
+import { avisar } from '../../services/alerta';
+
+// Aceita "150", "150,50" e "1.250,00"
+const converterValor = (texto) => {
+  const normalizado = texto.includes(',') ? texto.replace(/\./g, '').replace(',', '.') : texto;
+  return parseFloat(normalizado) || 0;
+};
 
 export default function EnviarPropostaScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  
+  const { user } = useContext(AuthContext);
+
   const pedido = route.params?.pedido || {};
   const [valorProposta, setValorProposta] = useState('');
-  
-  const valorNumerico = parseFloat(valorProposta.replace(',', '.')) || 0;
+  const [enviando, setEnviando] = useState(false);
+
+  // Apenas uma prévia: o valor oficial da taxa (15%) é calculado no back-end
+  const valorNumerico = Math.round(converterValor(valorProposta) * 100) / 100;
   const taxaPlataforma = valorNumerico * 0.15;
   const valorLiquido = valorNumerico - taxaPlataforma;
 
@@ -23,23 +34,23 @@ export default function EnviarPropostaScreen() {
 
   const handleEnviarProposta = async () => {
     if (valorNumerico <= 0) {
-      Alert.alert('Atenção', 'Digite um valor válido para enviar a proposta.');
+      avisar('Atenção', 'Digite um valor válido para enviar a proposta.');
       return;
     }
 
     try {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "Nova Proposta Recebida! 🔨",
-          body: `Um montador enviou uma proposta de R$ ${formatarMoeda(valorNumerico)} para o seu pedido.`,
-        },
-        trigger: null, 
+      setEnviando(true);
+      await api.put(`/pedidos/${pedido.id}/proposta`, {
+        montadorId: user.id,
+        valorProposto: valorNumerico,
       });
-      
-      Alert.alert('Sucesso', 'Proposta enviada com sucesso! O cliente foi notificado.');
+
+      avisar('Sucesso', 'Proposta enviada! Agora é só aguardar a resposta do cliente.');
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Erro', 'Falha ao conectar com o servidor.');
+      avisar('Erro', mensagemDeErro(error));
+    } finally {
+      setEnviando(false);
     }
   };
 
@@ -115,8 +126,8 @@ export default function EnviarPropostaScreen() {
           </View>
         )}
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleEnviarProposta}>
-          <Text style={styles.submitButtonText}>Enviar Proposta</Text>
+        <TouchableOpacity style={[styles.submitButton, enviando && { opacity: 0.6 }]} onPress={handleEnviarProposta} disabled={enviando}>
+          <Text style={styles.submitButtonText}>{enviando ? 'Enviando...' : 'Enviar Proposta'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

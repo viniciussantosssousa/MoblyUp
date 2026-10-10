@@ -6,6 +6,7 @@ import { styles } from './HomeClienteStyles';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../contexts/AuthContext'; 
 import api from '../../services/api'; // <-- Importando o Axios
+import { STATUS_PEDIDO, isConcluido, formatarData } from '../../services/statusPedido';
 
 export default function HomeClienteScreen() {
   const navigation = useNavigation();
@@ -21,12 +22,9 @@ export default function HomeClienteScreen() {
     const fetchPedidos = async () => {
       try {
         setLoading(true);
-        // Busca com Axios
-        const response = await api.get('/pedidos');
-        
-        // Filtra para mostrar apenas os pedidos desse cliente
-        const meusPedidos = response.data.filter(p => p.clienteId === clienteIdLogado);
-        setPedidos(meusPedidos);
+        // Busca apenas os pedidos desse cliente
+        const response = await api.get(`/pedidos/cliente/${clienteIdLogado}`);
+        setPedidos(response.data);
         
       } catch (error) {
         console.log('Erro ao buscar pedidos no cliente:', error);
@@ -35,17 +33,17 @@ export default function HomeClienteScreen() {
       }
     };
 
-    if (isFocused) {
+    if (isFocused && clienteIdLogado) {
       fetchPedidos();
     }
   }, [isFocused, clienteIdLogado]);
 
+  // Com proposta pendente abre a tela de propostas; nos demais casos, o acompanhamento do pedido
   const handleAbrirPedido = (pedido) => {
-    const isConcluido = pedido.status === 'Concluído' || pedido.status === 2;
-    if (isConcluido) {
-      navigation.navigate('DetalhesPedido', { pedido });
-    } else {
+    if (pedido.status === STATUS_PEDIDO.AGUARDANDO_APROVACAO_CLIENTE) {
       navigation.navigate('VerPropostas', { pedido });
+    } else {
+      navigation.navigate('DetalhesPedido', { pedido });
     }
   };
 
@@ -98,7 +96,7 @@ export default function HomeClienteScreen() {
           <Text style={styles.emptyText}>Você ainda não possui pedidos recentes.</Text>
         ) : (
           pedidos.map((pedido) => {
-            const isConcluido = pedido.status === 'Concluído' || pedido.status === 2; 
+            const concluido = isConcluido(pedido);
 
             return (
               <TouchableOpacity 
@@ -109,12 +107,12 @@ export default function HomeClienteScreen() {
               >
                 <View style={styles.orderHeader}>
                   <Text style={styles.orderTitle}>{pedido.tipoMovel}</Text>
-                  <Text style={styles.orderDate}>{pedido.data || 'Recente'}</Text>
+                  <Text style={styles.orderDate}>{formatarData(pedido.dataCriacao) || 'Recente'}</Text>
                 </View>
                 <Text style={styles.orderAddress}>{pedido.enderecoServico}</Text>
-                <View style={isConcluido ? styles.statusContainerDone : styles.statusContainerPending}>
-                  <Text style={isConcluido ? styles.statusTextDone : styles.statusTextPending}>
-                    {isConcluido ? 'Concluído' : 'Aguardando Propostas'}
+                <View style={concluido ? styles.statusContainerDone : styles.statusContainerPending}>
+                  <Text style={concluido ? styles.statusTextDone : styles.statusTextPending}>
+                    {pedido.statusDescricao}
                   </Text>
                 </View>
               </TouchableOpacity>

@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import { styles } from './SolicitarServicoStyles';
 import { colors } from '../../theme/colors';
-import api from '../../services/api';
+import api, { enviarImagem, mensagemDeErro } from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext'; 
 
 export default function SolicitarServicoScreen() {
@@ -21,6 +21,7 @@ export default function SolicitarServicoScreen() {
   const [rua, setRua] = useState('');
   const [numero, setNumero] = useState('');
   const [bairro, setBairro] = useState('');
+  const [enviando, setEnviando] = useState(false);
 
   const handleVoltar = () => {
     navigation.goBack();
@@ -76,11 +77,16 @@ export default function SolicitarServicoScreen() {
     const enderecoCompleto = `${rua}, ${numero}, ${bairro} - ${user?.regiao || ''}`;
 
     try {
+      setEnviando(true);
+
+      // A foto fica só no celular até ser enviada; o montador precisa da URL pública
+      const urlFotoPublica = urlFoto ? await enviarImagem(urlFoto) : null;
+
       const response = await api.post('/pedidos', {
         clienteId: user?.id,
         tipoMovel,
         tamanhoMovel,
-        urlFotoMovelTemporaria: urlFoto,
+        urlFotoMovelTemporaria: urlFotoPublica,
         enderecoServico: enderecoCompleto // Envia a string completinha para o C#
       });
 
@@ -107,8 +113,10 @@ export default function SolicitarServicoScreen() {
       }
     } catch (error) {
       console.log('Erro ao criar pedido:', error);
-      const erroMsg = 'Não foi possível conectar com o servidor para enviar o pedido.';
+      const erroMsg = mensagemDeErro(error, 'Não foi possível conectar com o servidor para enviar o pedido.');
       Platform.OS === 'web' ? window.alert(erroMsg) : Alert.alert('Erro', erroMsg);
+    } finally {
+      setEnviando(false);
     }
   };
 
@@ -185,8 +193,8 @@ export default function SolicitarServicoScreen() {
           />
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleSolicitar}>
-          <Text style={styles.buttonText}>Encontrar Montador</Text>
+        <TouchableOpacity style={[styles.button, enviando && { opacity: 0.6 }]} onPress={handleSolicitar} disabled={enviando}>
+          <Text style={styles.buttonText}>{enviando ? 'Enviando...' : 'Encontrar Montador'}</Text>
         </TouchableOpacity>
 
       </ScrollView>

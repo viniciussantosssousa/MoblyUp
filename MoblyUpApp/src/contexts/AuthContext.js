@@ -4,12 +4,29 @@ import { auth, db } from '../services/firebaseConfig'; // <-- Importando o db
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
-  signOut as firebaseSignOut, 
-  onAuthStateChanged 
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  updatePassword
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore'; // <-- Funções do banco de dados
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'; // <-- Funções do banco de dados
+import api from '../services/api';
 
 export const AuthContext = createContext({});
+
+// Garante que o usuário do Firebase também exista no SQL Server (a API não duplica).
+// Os pedidos dependem disso, pois o ClienteId é chave estrangeira para Usuarios.
+const sincronizarComApi = async (userData) => {
+  try {
+    await api.post('/usuarios', {
+      id: userData.id,
+      nome: userData.nome,
+      email: userData.email,
+      tipo: userData.tipo,
+    });
+  } catch (error) {
+    console.log('Erro ao sincronizar usuário com a API:', error);
+  }
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -20,7 +37,9 @@ export const AuthProvider = ({ children }) => {
       if (firebaseUser) {
         const storedUser = await AsyncStorage.getItem('@MoblyUp:user');
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          sincronizarComApi(userData);
         } else {
           // Se não tem no AsyncStorage, busca do Firestore
           const docRef = doc(db, 'usuarios', firebaseUser.uid);
@@ -29,6 +48,7 @@ export const AuthProvider = ({ children }) => {
             const userData = { id: firebaseUser.uid, ...docSnap.data() };
             setUser(userData);
             await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(userData));
+            sincronizarComApi(userData);
           }
         }
       } else {
@@ -62,7 +82,10 @@ export const AuthProvider = ({ children }) => {
       regiao: regiao
     });
 
-    // 3. Atualiza o app
+    // 3. Cria o mesmo usuário no banco da API (SQL Server)
+    await sincronizarComApi(newUser);
+
+    // 4. Atualiza o app
     setUser(newUser);
     await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(newUser));
   };
@@ -79,6 +102,8 @@ export const AuthProvider = ({ children }) => {
 
     if (docSnap.exists()) {
       const userData = { id: uid, ...docSnap.data() };
+      // Cobre contas criadas antes da sincronização existir
+      await sincronizarComApi(userData);
       setUser(userData);
       await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(userData));
     } else {
@@ -92,8 +117,22 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // PERFIL: atualiza nome (Firestore + API), chave Pix (API, só montador) e senha (Firebase)
+  const updateUser = async ({ nome, chavePix, senha }) => {
+    await api.put(`/usuarios/${user.id}`, { nome, chavePix });
+    await updateDoc(doc(db, 'usuarios', user.id), { nome });
+
+    if (senha) {
+      await updatePassword(auth.currentUser, senha);
+    }
+
+    const userData = { ...user, nome };
+    setUser(userData);
+    await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(userData));
+  };
+
   return (
-    <AuthContext.Provider value={{ signed: !!user, user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ signed: !!user, user, loading, signIn, signUp, signOut, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

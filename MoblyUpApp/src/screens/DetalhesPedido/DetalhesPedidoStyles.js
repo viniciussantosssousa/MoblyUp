@@ -56,6 +56,28 @@ export const styles = StyleSheet.create({
     color: '#718096',
     textAlign: 'center',
   },
+  actionButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    marginTop: 16,
+  },
+  actionButtonText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  foto: {
+    width: '100%',
+    height: 220,
+    borderRadius: 8,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   sectionCard: {
     backgroundColor: colors.white,
     borderRadius: 12,

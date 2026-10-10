@@ -7,7 +7,7 @@ namespace MoblyUp.Domain.Entities
     {
         public string Id { get; private set; }
         public string Nome { get; private set; }
-        public string Cpf { get; private set; }
+        public string? Cpf { get; private set; }
         public string Email { get; private set; }
         public string SenhaHash { get; private set; }
         public string Telefone { get; private set; }
@@ -19,7 +19,7 @@ namespace MoblyUp.Domain.Entities
         public string? ChavePix { get; private set; } 
         public string? DocumentoFotoUrl { get; private set; } 
 
-        public Usuario(string nome, string cpf, string email, string senhaHash, string telefone, TipoPerfil perfil, string? id = null)
+        public Usuario(string nome, string? cpf,string email, string senhaHash, string telefone, TipoPerfil perfil, string? id = null)
         {
             Id = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString() : id; 
             Nome = nome;
@@ -30,6 +30,14 @@ namespace MoblyUp.Domain.Entities
             Perfil = perfil;
             DataCadastro = DateTime.UtcNow; 
             Ativo = true;
+        }
+
+        public void AtualizarNome(string nome)
+        {
+            if (string.IsNullOrWhiteSpace(nome))
+                throw new InvalidOperationException("O nome não pode ficar vazio.");
+
+            Nome = nome.Trim();
         }
 
         public void DesativarConta()
