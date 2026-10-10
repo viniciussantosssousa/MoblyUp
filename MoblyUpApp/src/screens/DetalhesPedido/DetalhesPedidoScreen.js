@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
 import { styles } from './DetalhesPedidoStyles';
 import { colors } from '../../theme/colors';
-import { AuthContext } from '../../contexts/AuthContext';
 import api, { mensagemDeErro } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarData, formatarMoeda } from '../../services/statusPedido';
@@ -23,7 +22,6 @@ export default function DetalhesPedidoScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const isFocused = useIsFocused();
-  const { user } = useContext(AuthContext);
 
   const pedidoId = route.params?.pedido?.id;
 
@@ -54,7 +52,7 @@ export default function DetalhesPedidoScreen() {
 
     try {
       setProcessando(true);
-      await api.put(`/pedidos/${pedidoId}/confirmar-pagamento`, { clienteId: user.id });
+      await api.put(`/pedidos/${pedidoId}/confirmar-pagamento`);
       avisar('Pagamento confirmado!', 'O montador foi liberado e irá até o endereço cadastrado.');
       await carregarPedido();
     } catch (error) {

@@ -25,6 +25,9 @@ export default function LoginScreen() {
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         erroMsg = 'E-mail ou senha incorretos.';
       }
+      if (error.code === 'permission-denied') erroMsg = 'O servidor recusou o acesso ao seu perfil (regras do Firestore).';
+      if (error.code === 'perfil-nao-encontrado') erroMsg = 'Esta conta não tem perfil cadastrado. Crie a conta novamente.';
+      console.log('Erro no login:', error);
       Platform.OS === 'web' ? window.alert(erroMsg) : Alert.alert('Erro', erroMsg);
     }
   };

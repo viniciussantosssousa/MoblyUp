@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using MoblyUp.Application.DTOs;
+using MoblyUp.Application.Interfaces;
 using MoblyUp.Domain.Entities;
 using MoblyUp.Domain.Enums;
 using MoblyUp.Domain.Interfaces;
@@ -11,16 +12,18 @@ namespace MoblyUp.Application.UseCases
     {
         private readonly IPedidoMontagemRepository _pedidoRepository;
         private readonly IUsuarioRepository _usuarioRepository;
+        private readonly INotificacaoService _notificacaoService;
 
-        public CriarPedidoMontagemUseCase(IPedidoMontagemRepository pedidoRepository, IUsuarioRepository usuarioRepository)
+        public CriarPedidoMontagemUseCase(IPedidoMontagemRepository pedidoRepository, IUsuarioRepository usuarioRepository, INotificacaoService notificacaoService)
         {
             _pedidoRepository = pedidoRepository;
             _usuarioRepository = usuarioRepository;
+            _notificacaoService = notificacaoService;
         }
 
-        public async Task ExecutarAsync(CriarPedidoMontagemRequest request)
+        public async Task ExecutarAsync(string clienteId, CriarPedidoMontagemRequest request)
         {
-            var cliente = await _usuarioRepository.ObterPorIdAsync(request.ClienteId);
+            var cliente = await _usuarioRepository.ObterPorIdAsync(clienteId);
             if (cliente == null || cliente.Perfil != TipoPerfil.Cliente)
                 throw new UnauthorizedAccessException("Apenas clientes cadastrados podem solicitar montagens.");
 
@@ -28,7 +31,7 @@ namespace MoblyUp.Application.UseCases
                 throw new Exception("Informe o tipo do móvel e o endereço do serviço.");
 
             var pedido = new PedidoMontagem(
-                request.ClienteId,
+                clienteId,
                 request.TipoMovel,
                 request.TamanhoMovel,
                 request.UrlFotoMovelTemporaria,
@@ -36,6 +39,12 @@ namespace MoblyUp.Application.UseCases
             );
 
             await _pedidoRepository.AdicionarAsync(pedido);
+
+            await _notificacaoService.NotificarMontadoresDaRegiaoAsync(
+                pedido.EnderecoServico,
+                "Nova montagem na sua região 🔨",
+                $"{pedido.TipoMovel} ({pedido.TamanhoMovel}). Envie sua proposta!",
+                pedido.Id);
         }
     }
 }

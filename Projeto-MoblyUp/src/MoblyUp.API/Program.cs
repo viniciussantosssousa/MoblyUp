@@ -1,8 +1,12 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using MoblyUp.Domain.Interfaces;
 using MoblyUp.Infrastructure.Data;
 using MoblyUp.Infrastructure.Repositories;
 using MoblyUp.Application.UseCases;
+using MoblyUp.Application.Interfaces;
+using MoblyUp.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,11 +22,35 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer("Server=localhost;Database=MoblyUpDb;Trusted_Connection=True;TrustServerCertificate=True;"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("MoblyUpDb")));
+
+// Autenticação: o app envia o ID token do Firebase (Authorization: Bearer ...).
+// A API valida a assinatura com as chaves públicas do Google e extrai o UID do usuário.
+var firebaseProjectId = builder.Configuration["Firebase:ProjectId"];
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = $"https://securetoken.google.com/{firebaseProjectId}";
+        options.MapInboundClaims = false; // mantém "sub" como o UID do Firebase
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = $"https://securetoken.google.com/{firebaseProjectId}",
+            ValidateAudience = true,
+            ValidAudience = firebaseProjectId,
+            ValidateLifetime = true,
+        };
+    });
+builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 builder.Services.AddScoped<IPedidoMontagemRepository, PedidoMontagemRepository>();
+
+// Notificações push via Expo (o envio nunca bloqueia o pedido por mais de 10s)
+builder.Services.AddHttpClient<INotificacaoService, ExpoNotificacaoService>(client =>
+    client.Timeout = TimeSpan.FromSeconds(10));
 
 builder.Services.AddScoped<CriarContaMontadorUseCase>();
 builder.Services.AddScoped<CriarPedidoMontagemUseCase>();
@@ -55,6 +83,7 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

@@ -3,7 +3,6 @@ import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, P
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import * as Notifications from 'expo-notifications';
 import { styles } from './SolicitarServicoStyles';
 import { colors } from '../../theme/colors';
 import api, { enviarImagem, mensagemDeErro } from '../../services/api';
@@ -83,7 +82,6 @@ export default function SolicitarServicoScreen() {
       const urlFotoPublica = urlFoto ? await enviarImagem(urlFoto) : null;
 
       const response = await api.post('/pedidos', {
-        clienteId: user?.id,
         tipoMovel,
         tamanhoMovel,
         urlFotoMovelTemporaria: urlFotoPublica,
@@ -91,15 +89,7 @@ export default function SolicitarServicoScreen() {
       });
 
       if (response.status === 201 || response.status === 200) {
-        
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Serviço Solicitado! 📍",
-            body: `Seu pedido para montar um(a) ${tipoMovel} foi enviado aos montadores da região.`,
-          },
-          trigger: null, 
-        });
-
+        // Os montadores da região são avisados por push pela API
         const msgSucesso = 'Pedido enviado! Os montadores da região foram notificados.';
         Platform.OS === 'web' ? window.alert(msgSucesso) : Alert.alert('Sucesso!', msgSucesso);
         

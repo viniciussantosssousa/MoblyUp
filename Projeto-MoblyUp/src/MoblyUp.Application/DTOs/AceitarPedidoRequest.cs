@@ -1,10 +1,8 @@
-using System;
-
 namespace MoblyUp.Application.DTOs
 {
+    // O montador não vem no corpo: é o usuário autenticado pelo token do Firebase
     public class AceitarPedidoRequest
     {
-        public string MontadorId { get; set; }
         public decimal ValorProposto { get; set; }
     }
 }

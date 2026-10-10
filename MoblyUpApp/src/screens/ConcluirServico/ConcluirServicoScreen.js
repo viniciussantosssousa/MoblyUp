@@ -1,11 +1,10 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { styles } from './ConcluirServicoStyles';
 import { colors } from '../../theme/colors';
-import { AuthContext } from '../../contexts/AuthContext';
 import api, { enviarImagem, mensagemDeErro } from '../../services/api';
 import { avisar } from '../../services/alerta';
 import { formatarMoeda } from '../../services/statusPedido';
@@ -13,7 +12,6 @@ import { formatarMoeda } from '../../services/statusPedido';
 export default function ConcluirServicoScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { user } = useContext(AuthContext);
 
   const pedido = route.params?.pedido || {};
   const [fotoUri, setFotoUri] = useState('');
@@ -51,8 +49,8 @@ export default function ConcluirServicoScreen() {
       const fotoUrl = await enviarImagem(fotoUri);
 
       // 2. Vincula a foto ao pedido e 3. encerra o serviço (a API exige a foto antes)
-      await api.put(`/pedidos/${pedido.id}/foto-conclusao`, { montadorId: user.id, fotoUrl });
-      await api.put(`/pedidos/${pedido.id}/concluir`, { montadorId: user.id });
+      await api.put(`/pedidos/${pedido.id}/foto-conclusao`, { fotoUrl });
+      await api.put(`/pedidos/${pedido.id}/concluir`);
 
       avisar('Serviço concluído!', `Parabéns! ${formatarMoeda(pedido.valorMontador)} serão repassados para a sua chave Pix.`);
       navigation.navigate('HomeMontador');

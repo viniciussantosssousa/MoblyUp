@@ -70,7 +70,9 @@ export default function CadastroScreen() {
       if (error.code === 'auth/email-already-in-use') erroMsg = 'Este e-mail já está em uso.';
       if (error.code === 'auth/invalid-email') erroMsg = 'E-mail inválido.';
       if (error.code === 'auth/weak-password') erroMsg = 'A senha deve ter pelo menos 6 caracteres.';
-      
+      if (error.code === 'permission-denied') erroMsg = 'O servidor recusou o cadastro (regras do Firestore). Tente novamente mais tarde.';
+      console.log('Erro no cadastro:', error);
+
       Platform.OS === 'web' ? window.alert(erroMsg) : Alert.alert('Erro', erroMsg);
     }
   };

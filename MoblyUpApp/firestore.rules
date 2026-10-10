@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Regras do Firestore do MoblyUp.
+// Publique no Console do Firebase > Firestore Database > Regras (copie e cole este arquivo).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Perfil do usuário (nome, tipo, região). Cada um só lê e altera o próprio documento.
+    match /usuarios/{uid} {
+      allow read, create: if request.auth != null && request.auth.uid == uid;
+
+      // O tipo (cliente/montador) não pode ser trocado depois do cadastro
+      allow update: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.tipo == resource.data.tipo;
+
+      allow delete: if false;
+    }
+
+    // Todo o resto (pedidos, propostas) fica na API em C#, nunca direto no Firestore
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

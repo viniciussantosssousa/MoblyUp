@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using MoblyUp.Application.Interfaces;
 using MoblyUp.Domain.Interfaces;
 
 namespace MoblyUp.Application.UseCases
@@ -7,10 +8,12 @@ namespace MoblyUp.Application.UseCases
     public class ConcluirPedidoUseCase
     {
         private readonly IPedidoMontagemRepository _pedidoRepository;
+        private readonly INotificacaoService _notificacaoService;
 
-        public ConcluirPedidoUseCase(IPedidoMontagemRepository pedidoRepository)
+        public ConcluirPedidoUseCase(IPedidoMontagemRepository pedidoRepository, INotificacaoService notificacaoService)
         {
             _pedidoRepository = pedidoRepository;
+            _notificacaoService = notificacaoService;
         }
 
         public async Task ExecutarAsync(Guid pedidoId, string montadorId)
@@ -26,6 +29,12 @@ namespace MoblyUp.Application.UseCases
             pedido.ConcluirPedido();
 
             await _pedidoRepository.AtualizarAsync(pedido);
+
+            await _notificacaoService.NotificarUsuarioAsync(
+                pedido.ClienteId,
+                "Montagem concluída! 🛋️",
+                $"Seu {pedido.TipoMovel} está pronto. Toque para ver a foto do serviço.",
+                pedido.Id);
         }
     }
 }

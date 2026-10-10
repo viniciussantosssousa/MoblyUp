@@ -1,7 +1,8 @@
-import React, { useContext } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useContext, useEffect, useState } from 'react';
+import { View, ActivityIndicator, Platform } from 'react-native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as Notifications from 'expo-notifications';
 
 import { AuthContext } from '../contexts/AuthContext';
 
@@ -25,9 +26,43 @@ import ConcluirServicoScreen from '../screens/ConcluirServico/ConcluirServicoScr
 import PerfilScreen from '../screens/Perfil/PerfilScreen';
 
 const Stack = createNativeStackNavigator();
+const navigationRef = createNavigationContainerRef();
 
 export default function Routes() {
   const { signed, user, loading } = useContext(AuthContext);
+  const [navegacaoPronta, setNavegacaoPronta] = useState(false);
+  const [pedidoDaNotificacao, setPedidoDaNotificacao] = useState(null);
+
+  // Guarda o pedido da notificação tocada (com o app aberto ou abrindo o app por ela)
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    const tratarResposta = (resposta) => {
+      const pedidoId = resposta?.notification?.request?.content?.data?.pedidoId;
+      if (pedidoId) setPedidoDaNotificacao(pedidoId);
+    };
+
+    Notifications.getLastNotificationResponseAsync().then((resposta) => {
+      tratarResposta(resposta);
+      Notifications.clearLastNotificationResponseAsync();
+    });
+
+    const subscription = Notifications.addNotificationResponseReceivedListener(tratarResposta);
+    return () => subscription.remove();
+  }, []);
+
+  // Abre a tela certa assim que o usuário estiver logado e a navegação pronta
+  useEffect(() => {
+    if (!pedidoDaNotificacao || !signed || !navegacaoPronta) return;
+
+    if (user?.tipo === 'cliente') {
+      navigationRef.navigate('DetalhesPedido', { pedido: { id: pedidoDaNotificacao } });
+    } else {
+      // O montador acompanha propostas e serviços liberados na tela inicial
+      navigationRef.navigate('HomeMontador');
+    }
+    setPedidoDaNotificacao(null);
+  }, [pedidoDaNotificacao, signed, navegacaoPronta, user?.tipo]);
 
   if (loading) {
     return (
@@ -38,7 +73,7 @@ export default function Routes() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef} onReady={() => setNavegacaoPronta(true)}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         
         {!signed ? (

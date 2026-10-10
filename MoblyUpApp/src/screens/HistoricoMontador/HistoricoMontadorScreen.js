@@ -20,7 +20,7 @@ export default function HistoricoMontadorScreen() {
       try {
         setLoading(true);
         // Todos os pedidos em que este montador enviou proposta ou trabalhou
-        const response = await api.get(`/pedidos/montador/${user.id}`);
+        const response = await api.get('/pedidos/montador');
         setPedidos(response.data);
       } catch (error) {
         console.log('Erro ao buscar histórico do montador:', error);

@@ -165,6 +165,10 @@ namespace MoblyUp.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("ExpoPushToken")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("FotoPerfilUrl")
                         .HasColumnType("nvarchar(max)");
 
@@ -175,6 +179,10 @@ namespace MoblyUp.Infrastructure.Migrations
 
                     b.Property<int>("Perfil")
                         .HasColumnType("int");
+
+                    b.Property<string>("Regiao")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("SenhaHash")
                         .IsRequired()
@@ -193,6 +201,8 @@ namespace MoblyUp.Infrastructure.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("ExpoPushToken");
 
                     b.ToTable("Usuarios", (string)null);
                 });

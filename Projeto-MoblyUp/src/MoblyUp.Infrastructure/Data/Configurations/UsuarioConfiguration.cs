@@ -37,6 +37,14 @@ namespace MoblyUp.Infrastructure.Data.Configurations
 
             builder.Property(u => u.ChavePix)
                 .HasMaxLength(100);
+
+            builder.Property(u => u.Regiao)
+                .HasMaxLength(100);
+
+            builder.Property(u => u.ExpoPushToken)
+                .HasMaxLength(200);
+
+            builder.HasIndex(u => u.ExpoPushToken);
         }
     }
 }

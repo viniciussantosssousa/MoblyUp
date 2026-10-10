@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MoblyUp.API.Extensions;
 using MoblyUp.Application.DTOs;
 using MoblyUp.Application.UseCases;
 using System;
@@ -6,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace MoblyUp.API.Controllers
 {
+    // Todas as rotas exigem o ID token do Firebase. O usuário que age é sempre
+    // o dono do token (UsuarioId), nunca um ID enviado no corpo da requisição.
+    [Authorize]
     [ApiController]
     [Route("api/pedidos")]
     public class PedidoMontagemController : ControllerBase
@@ -33,77 +38,82 @@ namespace MoblyUp.API.Controllers
             _consultarPedidosUseCase = consultarPedidosUseCase;
         }
 
-        // GET api/pedidos/disponiveis?regiao=Lagoa Formosa - MG
+        private string UsuarioId => User.ObterUsuarioId();
+
+        // GET api/pedidos/disponiveis?regiao=Lagoa Formosa - MG (somente montadores)
         [HttpGet("disponiveis")]
-        public async Task<IActionResult> ListarDisponiveis([FromQuery] string? regiao)
-        {
-            var pedidos = await _consultarPedidosUseCase.ObterDisponiveisAsync(regiao);
-            return Ok(pedidos);
-        }
+        public Task<IActionResult> ListarDisponiveis([FromQuery] string? regiao) =>
+            Consultar(async () => await _consultarPedidosUseCase.ObterDisponiveisAsync(UsuarioId, regiao));
 
-        [HttpGet("cliente/{clienteId}")]
-        public async Task<IActionResult> ListarDoCliente(string clienteId)
-        {
-            var pedidos = await _consultarPedidosUseCase.ObterDoClienteAsync(clienteId);
-            return Ok(pedidos);
-        }
+        // Pedidos criados pelo cliente logado
+        [HttpGet("cliente")]
+        public Task<IActionResult> ListarDoCliente() =>
+            Consultar(async () => await _consultarPedidosUseCase.ObterDoClienteAsync(UsuarioId));
 
-        [HttpGet("montador/{montadorId}")]
-        public async Task<IActionResult> ListarDoMontador(string montadorId)
-        {
-            var pedidos = await _consultarPedidosUseCase.ObterDoMontadorAsync(montadorId);
-            return Ok(pedidos);
-        }
+        // Pedidos em que o montador logado enviou proposta ou trabalhou
+        [HttpGet("montador")]
+        public Task<IActionResult> ListarDoMontador() =>
+            Consultar(async () => await _consultarPedidosUseCase.ObterDoMontadorAsync(UsuarioId));
 
         [HttpGet("{id:guid}")]
-        public async Task<IActionResult> ObterPorId(Guid id)
-        {
-            var pedido = await _consultarPedidosUseCase.ObterPorIdAsync(id);
-            if (pedido == null)
-                return NotFound(new { erro = "Pedido não encontrado." });
-
-            return Ok(pedido);
-        }
+        public Task<IActionResult> ObterPorId(Guid id) =>
+            Consultar(async () => await _consultarPedidosUseCase.ObterPorIdAsync(id, UsuarioId));
 
         [HttpPost]
         public Task<IActionResult> CriarPedido([FromBody] CriarPedidoMontagemRequest request) =>
-            Executar(() => _criarPedidoUseCase.ExecutarAsync(request),
+            Executar(() => _criarPedidoUseCase.ExecutarAsync(UsuarioId, request),
                 "Pedido criado com sucesso e disponível para montadores!", 201);
 
         // Montador envia a proposta de valor (Disponível -> Aguardando Aprovação)
         [HttpPut("{id}/proposta")]
         public Task<IActionResult> EnviarProposta(Guid id, [FromBody] AceitarPedidoRequest request) =>
-            Executar(() => _aceitarPedidoUseCase.ExecutarAsync(id, request),
+            Executar(() => _aceitarPedidoUseCase.ExecutarAsync(id, UsuarioId, request),
                 "Proposta enviada ao cliente com sucesso!");
 
         // Cliente aceita a proposta (Aguardando Aprovação -> Aguardando Pagamento)
         [HttpPut("{id}/aceitar-proposta")]
-        public Task<IActionResult> AceitarProposta(Guid id, [FromBody] AcaoClienteRequest request) =>
-            Executar(() => _responderPropostaUseCase.AceitarAsync(id, request.ClienteId),
+        public Task<IActionResult> AceitarProposta(Guid id) =>
+            Executar(() => _responderPropostaUseCase.AceitarAsync(id, UsuarioId),
                 "Proposta aceita! Realize o pagamento para liberar o montador.");
 
         // Cliente recusa a proposta (volta para Disponível)
         [HttpPut("{id}/recusar-proposta")]
-        public Task<IActionResult> RecusarProposta(Guid id, [FromBody] AcaoClienteRequest request) =>
-            Executar(() => _responderPropostaUseCase.RecusarAsync(id, request.ClienteId),
+        public Task<IActionResult> RecusarProposta(Guid id) =>
+            Executar(() => _responderPropostaUseCase.RecusarAsync(id, UsuarioId),
                 "Proposta recusada. O pedido voltou a ficar disponível para os montadores.");
 
         // Cliente confirma o pagamento (Aguardando Pagamento -> Em Andamento)
         [HttpPut("{id}/confirmar-pagamento")]
-        public Task<IActionResult> ConfirmarPagamento(Guid id, [FromBody] AcaoClienteRequest request) =>
-            Executar(() => _responderPropostaUseCase.ConfirmarPagamentoAsync(id, request.ClienteId),
+        public Task<IActionResult> ConfirmarPagamento(Guid id) =>
+            Executar(() => _responderPropostaUseCase.ConfirmarPagamentoAsync(id, UsuarioId),
                 "Pagamento confirmado! O montador foi liberado para o serviço.");
 
         [HttpPut("{id}/foto-conclusao")]
         public Task<IActionResult> EnviarFoto(Guid id, [FromBody] EnviarFotoRequest request) =>
-            Executar(() => _enviarFotoUseCase.ExecutarAsync(id, request.MontadorId, request.FotoUrl),
+            Executar(() => _enviarFotoUseCase.ExecutarAsync(id, UsuarioId, request.FotoUrl),
                 "Foto enviada com sucesso!");
 
         // Montador conclui o serviço (Em Andamento -> Concluído), exige a foto enviada antes
         [HttpPut("{id}/concluir")]
-        public Task<IActionResult> ConcluirPedido(Guid id, [FromBody] AcaoMontadorRequest request) =>
-            Executar(() => _concluirPedidoUseCase.ExecutarAsync(id, request.MontadorId),
+        public Task<IActionResult> ConcluirPedido(Guid id) =>
+            Executar(() => _concluirPedidoUseCase.ExecutarAsync(id, UsuarioId),
                 "Pedido concluído com sucesso!");
+
+        private async Task<IActionResult> Consultar(Func<Task<object?>> consulta)
+        {
+            try
+            {
+                var resultado = await consulta();
+                if (resultado == null)
+                    return NotFound(new { erro = "Pedido não encontrado." });
+
+                return Ok(resultado);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { erro = ex.Message });
+            }
+        }
 
         private async Task<IActionResult> Executar(Func<Task> acao, string mensagemSucesso, int statusSucesso = 200)
         {

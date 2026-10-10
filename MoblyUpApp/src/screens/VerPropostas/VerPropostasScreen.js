@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { styles } from './VerPropostasStyles';
 import { colors } from '../../theme/colors';
-import { AuthContext } from '../../contexts/AuthContext';
 import api, { mensagemDeErro } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
@@ -12,7 +11,6 @@ import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
 export default function VerPropostasScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { user } = useContext(AuthContext);
 
   const pedidoId = route.params?.pedido?.id;
 
@@ -51,7 +49,7 @@ export default function VerPropostasScreen() {
 
     try {
       setProcessando(true);
-      await api.put(`/pedidos/${pedidoId}/aceitar-proposta`, { clienteId: user.id });
+      await api.put(`/pedidos/${pedidoId}/aceitar-proposta`);
       avisar('Proposta aceita!', 'Agora realize o pagamento para liberar o montador.');
       await carregarPedido();
     } catch (error) {
@@ -71,7 +69,7 @@ export default function VerPropostasScreen() {
 
     try {
       setProcessando(true);
-      await api.put(`/pedidos/${pedidoId}/recusar-proposta`, { clienteId: user.id });
+      await api.put(`/pedidos/${pedidoId}/recusar-proposta`);
       avisar('Proposta recusada', 'Seu pedido voltou a ficar visível para os montadores da região.');
       await carregarPedido();
     } catch (error) {

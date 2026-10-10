@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MoblyUp.API.Controllers
 {
     // Recebe as fotos tiradas no app (móvel do cliente e comprovação do montador)
     // e devolve a URL pública para ser gravada no pedido.
+    [Authorize]
     [ApiController]
     [Route("api/uploads")]
     public class UploadController : ControllerBase

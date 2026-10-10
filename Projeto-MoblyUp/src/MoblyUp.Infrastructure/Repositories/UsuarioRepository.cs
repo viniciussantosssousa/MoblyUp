@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MoblyUp.Domain.Entities;
+using MoblyUp.Domain.Enums;
 using MoblyUp.Domain.Interfaces;
 using MoblyUp.Infrastructure.Data;
 
@@ -29,6 +30,20 @@ namespace MoblyUp.Infrastructure.Repositories
         public async Task<Usuario?> ObterPorEmailAsync(string email)
         {
             return await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+        public async Task<IEnumerable<Usuario>> ObterPorPushTokenAsync(string token)
+        {
+            return await _context.Usuarios
+                .Where(u => u.ExpoPushToken == token)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Usuario>> ObterMontadoresComPushAsync()
+        {
+            return await _context.Usuarios
+                .Where(u => u.Perfil == TipoPerfil.Montador && u.Ativo && u.ExpoPushToken != null)
+                .ToListAsync();
         }
 
         public async Task AdicionarAsync(Usuario usuario)

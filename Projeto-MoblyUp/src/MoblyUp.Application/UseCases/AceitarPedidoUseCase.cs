@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using MoblyUp.Application.DTOs;
+using MoblyUp.Application.Interfaces;
+using MoblyUp.Application.Utils;
 using MoblyUp.Domain.Enums;
 using MoblyUp.Domain.Interfaces;
 
@@ -11,16 +13,18 @@ namespace MoblyUp.Application.UseCases
     {
         private readonly IPedidoMontagemRepository _pedidoRepository;
         private readonly IUsuarioRepository _usuarioRepository;
+        private readonly INotificacaoService _notificacaoService;
 
-        public AceitarPedidoUseCase(IPedidoMontagemRepository pedidoRepository, IUsuarioRepository usuarioRepository)
+        public AceitarPedidoUseCase(IPedidoMontagemRepository pedidoRepository, IUsuarioRepository usuarioRepository, INotificacaoService notificacaoService)
         {
             _pedidoRepository = pedidoRepository;
             _usuarioRepository = usuarioRepository;
+            _notificacaoService = notificacaoService;
         }
 
-        public async Task ExecutarAsync(Guid pedidoId, AceitarPedidoRequest request)
+        public async Task ExecutarAsync(Guid pedidoId, string montadorId, AceitarPedidoRequest request)
         {
-            var montador = await _usuarioRepository.ObterPorIdAsync(request.MontadorId);
+            var montador = await _usuarioRepository.ObterPorIdAsync(montadorId);
             if (montador == null || montador.Perfil != TipoPerfil.Montador)
                 throw new UnauthorizedAccessException("Apenas montadores cadastrados podem enviar propostas.");
 
@@ -32,9 +36,15 @@ namespace MoblyUp.Application.UseCases
             if (pedido == null)
                 throw new Exception("Pedido não encontrado.");
 
-            pedido.ReceberProposta(request.MontadorId, request.ValorProposto);
+            pedido.ReceberProposta(montadorId, request.ValorProposto);
 
             await _pedidoRepository.AtualizarAsync(pedido);
+
+            await _notificacaoService.NotificarUsuarioAsync(
+                pedido.ClienteId,
+                "Nova proposta recebida! 💰",
+                $"{montador.Nome} quer montar seu {pedido.TipoMovel} por {Moeda.Formatar(pedido.ValorProposto)}.",
+                pedido.Id);
         }
     }
 }

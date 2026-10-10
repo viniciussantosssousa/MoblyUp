@@ -31,7 +31,7 @@ export default function HomeMontadorScreen() {
         // A API já devolve só os pedidos abertos da região do montador (ex: "Lagoa Formosa - MG")
         const [disponiveis, meus] = await Promise.all([
           api.get('/pedidos/disponiveis', { params: { regiao: user?.regiao } }),
-          api.get(`/pedidos/montador/${user.id}`),
+          api.get('/pedidos/montador'),
         ]);
         setPedidosDisponiveis(disponiveis.data);
         setMeusServicos(meus.data.filter(p => STATUS_ATIVOS.includes(p.status)));

@@ -1,10 +1,9 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { styles } from './EnviarPropostaStyles';
 import { colors } from '../../theme/colors';
-import { AuthContext } from '../../contexts/AuthContext';
 import api, { mensagemDeErro } from '../../services/api';
 import { avisar } from '../../services/alerta';
 
@@ -17,7 +16,6 @@ const converterValor = (texto) => {
 export default function EnviarPropostaScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { user } = useContext(AuthContext);
 
   const pedido = route.params?.pedido || {};
   const [valorProposta, setValorProposta] = useState('');
@@ -40,10 +38,7 @@ export default function EnviarPropostaScreen() {
 
     try {
       setEnviando(true);
-      await api.put(`/pedidos/${pedido.id}/proposta`, {
-        montadorId: user.id,
-        valorProposto: valorNumerico,
-      });
+      await api.put(`/pedidos/${pedido.id}/proposta`, { valorProposto: valorNumerico });
 
       avisar('Sucesso', 'Proposta enviada! Agora é só aguardar a resposta do cliente.');
       navigation.goBack();

@@ -10,19 +10,24 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'; // <-- Funções do banco de dados
 import api from '../services/api';
+import { registrarNotificacoes, removerNotificacoes } from '../services/notificacoes';
 
 export const AuthContext = createContext({});
 
 // Garante que o usuário do Firebase também exista no SQL Server (a API não duplica).
 // Os pedidos dependem disso, pois o ClienteId é chave estrangeira para Usuarios.
+// O ID do usuário vai no token (api.js), não no corpo da requisição.
 const sincronizarComApi = async (userData) => {
   try {
     await api.post('/usuarios', {
-      id: userData.id,
       nome: userData.nome,
       email: userData.email,
       tipo: userData.tipo,
+      regiao: userData.regiao, // usada para avisar montadores sobre pedidos na cidade
     });
+
+    // Com o usuário já na API, registra este aparelho para receber notificações push
+    await registrarNotificacoes();
   } catch (error) {
     console.log('Erro ao sincronizar usuário com a API:', error);
   }
@@ -34,27 +39,33 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const storedUser = await AsyncStorage.getItem('@MoblyUp:user');
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          setUser(userData);
-          sincronizarComApi(userData);
-        } else {
-          // Se não tem no AsyncStorage, busca do Firestore
-          const docRef = doc(db, 'usuarios', firebaseUser.uid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const userData = { id: firebaseUser.uid, ...docSnap.data() };
+      try {
+        if (firebaseUser) {
+          const storedUser = await AsyncStorage.getItem('@MoblyUp:user');
+          if (storedUser) {
+            const userData = JSON.parse(storedUser);
             setUser(userData);
-            await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(userData));
             sincronizarComApi(userData);
+          } else {
+            // Se não tem no AsyncStorage, busca do Firestore
+            const docRef = doc(db, 'usuarios', firebaseUser.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              const userData = { id: firebaseUser.uid, ...docSnap.data() };
+              setUser(userData);
+              await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(userData));
+              sincronizarComApi(userData);
+            }
           }
+        } else {
+          setUser(null);
         }
-      } else {
-        setUser(null);
+      } catch (error) {
+        // Ex.: regras do Firestore bloqueando a leitura. Sem isso o app ficaria preso no carregamento.
+        console.log('Erro ao restaurar a sessão:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return unsubscribe;
@@ -75,12 +86,18 @@ export const AuthProvider = ({ children }) => {
     };
 
     // 2. Salva o perfil no Firestore, na coleção 'usuarios', usando o UID como chave
-    await setDoc(doc(db, 'usuarios', uid), {
-      nome: nome,
-      email: email,
-      tipo: tipoUsuario,
-      regiao: regiao
-    });
+    try {
+      await setDoc(doc(db, 'usuarios', uid), {
+        nome: nome,
+        email: email,
+        tipo: tipoUsuario,
+        regiao: regiao
+      });
+    } catch (error) {
+      // Sem perfil a conta fica inutilizável e o e-mail "preso": desfaz o login recém-criado
+      await userCredential.user.delete().catch(() => {});
+      throw error;
+    }
 
     // 3. Cria o mesmo usuário no banco da API (SQL Server)
     await sincronizarComApi(newUser);
@@ -107,11 +124,15 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(userData));
     } else {
-      console.log("Perfil não encontrado no banco de dados!");
+      // Login existe mas o perfil não (cadastro interrompido): não deixa o usuário "meio logado"
+      await firebaseSignOut(auth);
+      throw { code: 'perfil-nao-encontrado' };
     }
   };
 
   const signOut = async () => {
+    // Precisa ser antes do logout do Firebase, enquanto ainda há token para a API
+    await removerNotificacoes();
     await firebaseSignOut(auth);
     await AsyncStorage.removeItem('@MoblyUp:user');
     setUser(null);
@@ -119,7 +140,7 @@ export const AuthProvider = ({ children }) => {
 
   // PERFIL: atualiza nome (Firestore + API), chave Pix (API, só montador) e senha (Firebase)
   const updateUser = async ({ nome, chavePix, senha }) => {
-    await api.put(`/usuarios/${user.id}`, { nome, chavePix });
+    await api.put('/usuarios/me', { nome, chavePix });
     await updateDoc(doc(db, 'usuarios', user.id), { nome });
 
     if (senha) {

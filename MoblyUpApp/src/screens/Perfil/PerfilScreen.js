@@ -21,7 +21,7 @@ export default function PerfilScreen() {
   // A chave Pix fica só no back-end (usada para os repasses ao montador)
   useEffect(() => {
     if (!isMontador || !user?.id) return;
-    api.get(`/usuarios/${user.id}`)
+    api.get('/usuarios/me')
       .then(response => setChavePix(response.data.chavePix || ''))
       .catch(error => console.log('Erro ao carregar perfil:', error));
   }, [isMontador, user?.id]);

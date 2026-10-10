@@ -17,9 +17,14 @@ namespace MoblyUp.Domain.Entities
 
         public string? FotoPerfilUrl { get; private set; }
         public string? ChavePix { get; private set; } 
-        public string? DocumentoFotoUrl { get; private set; } 
+        public string? DocumentoFotoUrl { get; private set; }
 
-        public Usuario(string nome, string? cpf,string email, string senhaHash, string telefone, TipoPerfil perfil, string? id = null)
+        // Região no formato "Cidade - UF" (vem do CEP no cadastro), usada para avisar montadores próximos
+        public string? Regiao { get; private set; }
+        // Token do Expo Push do aparelho em que o usuário está logado
+        public string? ExpoPushToken { get; private set; }
+
+        public Usuario(string nome, string? cpf, string email,string senhaHash, string telefone, TipoPerfil perfil, string? id = null)
         {
             Id = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString() : id; 
             Nome = nome;
@@ -38,6 +43,24 @@ namespace MoblyUp.Domain.Entities
                 throw new InvalidOperationException("O nome não pode ficar vazio.");
 
             Nome = nome.Trim();
+        }
+
+        public void DefinirRegiao(string? regiao)
+        {
+            Regiao = string.IsNullOrWhiteSpace(regiao) ? null : regiao.Trim();
+        }
+
+        public void RegistrarPushToken(string token)
+        {
+            if (!token.StartsWith("ExponentPushToken[") && !token.StartsWith("ExpoPushToken["))
+                throw new InvalidOperationException("Token de notificação inválido.");
+
+            ExpoPushToken = token;
+        }
+
+        public void RemoverPushToken()
+        {
+            ExpoPushToken = null;
         }
 
         public void DesativarConta()

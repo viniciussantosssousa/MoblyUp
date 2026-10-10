@@ -23,7 +23,7 @@ export default function HomeClienteScreen() {
       try {
         setLoading(true);
         // Busca apenas os pedidos desse cliente
-        const response = await api.get(`/pedidos/cliente/${clienteIdLogado}`);
+        const response = await api.get('/pedidos/cliente');
         setPedidos(response.data);
         
       } catch (error) {
