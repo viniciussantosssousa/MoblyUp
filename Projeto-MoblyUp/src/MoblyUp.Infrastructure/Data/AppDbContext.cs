@@ -12,6 +12,7 @@ namespace MoblyUp.Infrastructure.Data
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<PedidoMontagem> PedidosMontagem { get; set; }
+        public DbSet<PedidoRecusado> PedidosRecusados { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

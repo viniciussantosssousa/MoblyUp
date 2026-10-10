@@ -2,7 +2,8 @@ import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { styles } from './CadastroStyles';
-import { AuthContext } from '../../contexts/AuthContext'; 
+import { AuthContext } from '../../contexts/AuthContext';
+import { traduzirErro } from '../../services/erros';
 
 export default function CadastroScreen() {
   const navigation = useNavigation();
@@ -17,6 +18,7 @@ export default function CadastroScreen() {
   const [cep, setCep] = useState('');
   const [cidadeEstado, setCidadeEstado] = useState('');
   const [buscandoCep, setBuscandoCep] = useState(false);
+  const [cadastrando, setCadastrando] = useState(false);
 
   // Função que busca o CEP automaticamente
   const handleCepChange = async (cepDigitado) => {
@@ -59,21 +61,19 @@ export default function CadastroScreen() {
     }
 
     try {
+      setCadastrando(true);
       // Passa a string gerada (ex: "Lagoa Formosa - MG") como a região para o Contexto
-      await signUp(email, senha, nome, tipo, cidadeEstado);
-      
+      await signUp(email.trim(), senha, nome.trim(), tipo, cidadeEstado);
+
       const msgSucesso = 'Conta criada com sucesso!';
       Platform.OS === 'web' ? window.alert(msgSucesso) : Alert.alert('Bem-vindo!', msgSucesso);
-      
-    } catch (error) {
-      let erroMsg = 'Ocorreu um erro ao criar a conta.';
-      if (error.code === 'auth/email-already-in-use') erroMsg = 'Este e-mail já está em uso.';
-      if (error.code === 'auth/invalid-email') erroMsg = 'E-mail inválido.';
-      if (error.code === 'auth/weak-password') erroMsg = 'A senha deve ter pelo menos 6 caracteres.';
-      if (error.code === 'permission-denied') erroMsg = 'O servidor recusou o cadastro (regras do Firestore). Tente novamente mais tarde.';
-      console.log('Erro no cadastro:', error);
 
+    } catch (error) {
+      console.log('Erro no cadastro:', error);
+      const erroMsg = traduzirErro(error, 'Ocorreu um erro ao criar a conta.');
       Platform.OS === 'web' ? window.alert(erroMsg) : Alert.alert('Erro', erroMsg);
+    } finally {
+      setCadastrando(false);
     }
   };
 
@@ -139,8 +139,8 @@ export default function CadastroScreen() {
           <TextInput style={styles.input} placeholder="Mínimo 6 caracteres" secureTextEntry value={senha} onChangeText={setSenha} />
         </View>
 
-        <TouchableOpacity style={styles.primaryButton} onPress={handleCadastro}>
-          <Text style={styles.primaryButtonText}>Cadastrar</Text>
+        <TouchableOpacity style={[styles.primaryButton, cadastrando && { opacity: 0.6 }]} onPress={handleCadastro} disabled={cadastrando}>
+          <Text style={styles.primaryButtonText}>{cadastrando ? 'Criando conta...' : 'Cadastrar'}</Text>
         </TouchableOpacity>
 
         <View style={styles.footerTextContainer}>

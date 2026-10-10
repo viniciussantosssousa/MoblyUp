@@ -8,6 +8,11 @@ export const styles = StyleSheet.create({
     padding: 24,
     justifyContent: 'center',
   },
+  content: {
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
+  },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 48,
@@ -69,6 +74,28 @@ export const styles = StyleSheet.create({
   secondaryButtonText: {
     color: '#3182CE',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  forgotButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 4,
+  },
+  forgotText: {
+    fontSize: 14,
+    color: '#3182CE',
+    fontWeight: '600',
+  },
+  linkButton: {
+    alignItems: 'center',
+    marginTop: 24,
+    padding: 8,
+  },
+  linkText: {
+    fontSize: 14,
+    color: '#718096',
+  },
+  linkTextBold: {
+    color: colors.primary,
     fontWeight: 'bold',
   },
   footerTextContainer: {

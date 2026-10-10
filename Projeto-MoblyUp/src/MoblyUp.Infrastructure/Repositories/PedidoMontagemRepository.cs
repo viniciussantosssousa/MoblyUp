@@ -26,9 +26,12 @@ namespace MoblyUp.Infrastructure.Repositories
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
+        // As listagens são somente leitura: AsNoTracking evita o custo de rastrear as entidades
+
         public async Task<IEnumerable<PedidoMontagem>> ObterPorClienteIdAsync(string clienteId)
         {
             return await _context.PedidosMontagem
+                .AsNoTracking()
                 .Include(p => p.Montador)
                 .Where(p => p.ClienteId == clienteId)
                 .ToListAsync();
@@ -37,6 +40,7 @@ namespace MoblyUp.Infrastructure.Repositories
         public async Task<IEnumerable<PedidoMontagem>> ObterPorMontadorIdAsync(string montadorId)
         {
             return await _context.PedidosMontagem
+                .AsNoTracking()
                 .Where(p => p.MontadorId == montadorId)
                 .ToListAsync();
         }
@@ -44,8 +48,29 @@ namespace MoblyUp.Infrastructure.Repositories
         public async Task<IEnumerable<PedidoMontagem>> ObterPorStatusAsync(StatusPedido status)
         {
             return await _context.PedidosMontagem
+                .AsNoTracking()
                 .Where(p => p.Status == status)
                 .ToListAsync();
+        }
+
+        public async Task RegistrarRecusaAsync(Guid pedidoId, string montadorId)
+        {
+            var jaRecusado = await _context.PedidosRecusados
+                .AnyAsync(r => r.PedidoId == pedidoId && r.MontadorId == montadorId);
+            if (jaRecusado)
+                return;
+
+            await _context.PedidosRecusados.AddAsync(new PedidoRecusado(pedidoId, montadorId));
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<HashSet<Guid>> ObterIdsRecusadosAsync(string montadorId)
+        {
+            var ids = await _context.PedidosRecusados
+                .Where(r => r.MontadorId == montadorId)
+                .Select(r => r.PedidoId)
+                .ToListAsync();
+            return ids.ToHashSet();
         }
 
         public async Task AdicionarAsync(PedidoMontagem pedido)

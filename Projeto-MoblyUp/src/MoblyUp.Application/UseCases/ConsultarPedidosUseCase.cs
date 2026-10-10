@@ -59,6 +59,10 @@ namespace MoblyUp.Application.UseCases
 
             var pedidos = await _pedidoRepository.ObterPorStatusAsync(StatusPedido.Disponivel);
 
+            // Esconde os pedidos que este montador já recusou ou dos quais desistiu
+            var recusados = await _pedidoRepository.ObterIdsRecusadosAsync(usuarioId);
+            pedidos = pedidos.Where(p => !recusados.Contains(p.Id));
+
             if (!string.IsNullOrWhiteSpace(regiao))
             {
                 var regiaoNormalizada = regiao.Trim();

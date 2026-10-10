@@ -5,4 +5,7 @@
     <Project Path="src/MoblyUp.Domain/MoblyUp.Domain.csproj" />
     <Project Path="src/MoblyUp.Infrastructure/MoblyUp.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MoblyUp.Tests/MoblyUp.Tests.csproj" />
+  </Folder>
 </Solution>

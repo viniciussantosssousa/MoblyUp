@@ -66,6 +66,35 @@ namespace MoblyUp.Domain.Entities
             if (Status != StatusPedido.AguardandoAprovacaoCliente)
                 throw new Exception("Não há proposta pendente para recusa.");
 
+            ReabrirParaPropostas();
+        }
+
+        // Montador desiste do serviço antes do pagamento: o pedido volta para o feed
+        public void DesistirProposta(string montadorId)
+        {
+            if (MontadorId != montadorId)
+                throw new UnauthorizedAccessException("Apenas o montador da proposta pode desistir dela.");
+
+            if (Status != StatusPedido.AguardandoAprovacaoCliente && Status != StatusPedido.AguardandoPagamento)
+                throw new Exception("Após a confirmação do pagamento não é possível desistir pelo app. Fale com o suporte.");
+
+            ReabrirParaPropostas();
+        }
+
+        // Cliente cancela o pedido enquanto ainda não pagou
+        public void Cancelar()
+        {
+            if (Status == StatusPedido.Cancelado)
+                throw new Exception("Este pedido já foi cancelado.");
+
+            if (Status == StatusPedido.EmAndamento || Status == StatusPedido.Concluido)
+                throw new Exception("Pedidos já pagos não podem ser cancelados pelo app. Fale com o suporte.");
+
+            Status = StatusPedido.Cancelado;
+        }
+
+        private void ReabrirParaPropostas()
+        {
             MontadorId = null;
             ValorProposto = null;
             TaxaPlataforma = null;

@@ -14,7 +14,8 @@ service cloud.firestore {
                     && request.auth.uid == uid
                     && request.resource.data.tipo == resource.data.tipo;
 
-      allow delete: if false;
+      // Excluir a conta pelo app apaga o próprio perfil
+      allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
     // Todo o resto (pedidos, propostas) fica na API em C#, nunca direto no Firestore

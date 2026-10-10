@@ -1,42 +1,45 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useContext, useCallback } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { styles } from './HomeClienteStyles';
 import { colors } from '../../theme/colors';
-import { AuthContext } from '../../contexts/AuthContext'; 
+import { AuthContext } from '../../contexts/AuthContext';
 import api from '../../services/api'; // <-- Importando o Axios
 import { STATUS_PEDIDO, isConcluido, formatarData } from '../../services/statusPedido';
 
+// Quantos pedidos aparecem antes de tocar em "Ver todos"
+const LIMITE_RECENTES = 5;
+
 export default function HomeClienteScreen() {
   const navigation = useNavigation();
-  const isFocused = useIsFocused();
-  const { user } = useContext(AuthContext); 
-  
+  const { user } = useContext(AuthContext);
+
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [atualizando, setAtualizando] = useState(false);
+  const [mostrarTodos, setMostrarTodos] = useState(false);
 
-  const clienteIdLogado = user?.id; 
-
-  useEffect(() => {
-    const fetchPedidos = async () => {
-      try {
-        setLoading(true);
-        // Busca apenas os pedidos desse cliente
-        const response = await api.get('/pedidos/cliente');
-        setPedidos(response.data);
-        
-      } catch (error) {
-        console.log('Erro ao buscar pedidos no cliente:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (isFocused && clienteIdLogado) {
-      fetchPedidos();
+  const carregar = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      // Busca apenas os pedidos desse cliente (já vêm do mais recente para o mais antigo)
+      const response = await api.get('/pedidos/cliente');
+      setPedidos(response.data);
+    } catch (error) {
+      console.log('Erro ao buscar pedidos no cliente:', error);
+    } finally {
+      setLoading(false);
+      setAtualizando(false);
     }
-  }, [isFocused, clienteIdLogado]);
+  }, [user?.id]);
+
+  useFocusEffect(useCallback(() => { carregar(); }, [carregar]));
+
+  const handleAtualizar = () => {
+    setAtualizando(true);
+    carregar();
+  };
 
   // Com proposta pendente abre a tela de propostas; nos demais casos, o acompanhamento do pedido
   const handleAbrirPedido = (pedido) => {
@@ -47,22 +50,32 @@ export default function HomeClienteScreen() {
     }
   };
 
+  const pedidosVisiveis = mostrarTodos ? pedidos : pedidos.slice(0, LIMITE_RECENTES);
+  const primeiroNome = (user?.nome || 'Cliente').split(' ')[0];
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Olá, {user?.nome || 'Cliente'}!</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.greeting}>Olá, {primeiroNome}!</Text>
           <Text style={styles.subGreeting}>O que vamos montar hoje?</Text>
         </View>
         <TouchableOpacity onPress={() => navigation.navigate('Perfil')}>
-          <Ionicons name="person-circle" size={48} color={colors.primary} />
+          {user?.fotoPerfilUrl ? (
+            <Image source={{ uri: user.fotoPerfilUrl }} style={styles.headerAvatar} />
+          ) : (
+            <Ionicons name="person-circle" size={48} color={colors.primary} />
+          )}
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        
-        <TouchableOpacity 
-          style={styles.ctaCard} 
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={handleAtualizar} />}
+      >
+
+        <TouchableOpacity
+          style={styles.ctaCard}
           activeOpacity={0.8}
           onPress={() => navigation.navigate('SolicitarServico')}
         >
@@ -83,9 +96,9 @@ export default function HomeClienteScreen() {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Meus Pedidos</Text>
-          {pedidos.length > 0 && (
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>Ver todos</Text>
+          {pedidos.length > LIMITE_RECENTES && (
+            <TouchableOpacity onPress={() => setMostrarTodos(!mostrarTodos)}>
+              <Text style={styles.seeAll}>{mostrarTodos ? 'Ver menos' : `Ver todos (${pedidos.length})`}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -95,13 +108,15 @@ export default function HomeClienteScreen() {
         ) : pedidos.length === 0 ? (
           <Text style={styles.emptyText}>Você ainda não possui pedidos recentes.</Text>
         ) : (
-          pedidos.map((pedido) => {
+          pedidosVisiveis.map((pedido) => {
             const concluido = isConcluido(pedido);
+            const cancelado = pedido.status === STATUS_PEDIDO.CANCELADO;
+            const temProposta = pedido.status === STATUS_PEDIDO.AGUARDANDO_APROVACAO_CLIENTE;
 
             return (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={pedido.id}
-                style={styles.orderCard} 
+                style={[styles.orderCard, cancelado && styles.orderCardCancelado]}
                 activeOpacity={0.7}
                 onPress={() => handleAbrirPedido(pedido)}
               >
@@ -110,8 +125,16 @@ export default function HomeClienteScreen() {
                   <Text style={styles.orderDate}>{formatarData(pedido.dataCriacao) || 'Recente'}</Text>
                 </View>
                 <Text style={styles.orderAddress}>{pedido.enderecoServico}</Text>
-                <View style={concluido ? styles.statusContainerDone : styles.statusContainerPending}>
-                  <Text style={concluido ? styles.statusTextDone : styles.statusTextPending}>
+                <View style={[
+                  concluido ? styles.statusContainerDone : styles.statusContainerPending,
+                  cancelado && styles.statusContainerCancelado,
+                  temProposta && styles.statusContainerDestaque,
+                ]}>
+                  <Text style={[
+                    concluido ? styles.statusTextDone : styles.statusTextPending,
+                    cancelado && styles.statusTextCancelado,
+                    temProposta && styles.statusTextDestaque,
+                  ]}>
                     {pedido.statusDescricao}
                   </Text>
                 </View>

@@ -5,7 +5,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { styles } from './EnviarPropostaStyles';
 import { colors } from '../../theme/colors';
 import api, { mensagemDeErro } from '../../services/api';
-import { avisar } from '../../services/alerta';
+import { avisar, confirmar } from '../../services/alerta';
 
 // Aceita "150", "150,50" e "1.250,00"
 const converterValor = (texto) => {
@@ -43,7 +43,33 @@ export default function EnviarPropostaScreen() {
       avisar('Sucesso', 'Proposta enviada! Agora é só aguardar a resposta do cliente.');
       navigation.goBack();
     } catch (error) {
-      avisar('Erro', mensagemDeErro(error));
+      const msg = mensagemDeErro(error);
+      // Sem chave Pix a API recusa a proposta: leva o montador direto ao Perfil
+      if (msg.includes('chave Pix')) {
+        const irParaPerfil = await confirmar('Chave Pix necessária', msg, 'Ir para o Perfil');
+        if (irParaPerfil) navigation.navigate('Perfil');
+      } else {
+        avisar('Erro', msg);
+      }
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const handleRecusar = async () => {
+    const ok = await confirmar(
+      'Recusar serviço',
+      'O pedido deixará de aparecer para você e continuará disponível para outros montadores.',
+      'Recusar'
+    );
+    if (!ok) return;
+
+    try {
+      setEnviando(true);
+      await api.put(`/pedidos/${pedido.id}/recusar`);
+      navigation.goBack();
+    } catch (error) {
+      avisar('Erro', mensagemDeErro(error, 'Não foi possível recusar o pedido.'));
     } finally {
       setEnviando(false);
     }
@@ -123,6 +149,10 @@ export default function EnviarPropostaScreen() {
 
         <TouchableOpacity style={[styles.submitButton, enviando && { opacity: 0.6 }]} onPress={handleEnviarProposta} disabled={enviando}>
           <Text style={styles.submitButtonText}>{enviando ? 'Enviando...' : 'Enviar Proposta'}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.declineButton} onPress={handleRecusar} disabled={enviando}>
+          <Text style={styles.declineButtonText}>Não tenho interesse neste serviço</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

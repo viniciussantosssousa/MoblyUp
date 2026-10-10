@@ -103,7 +103,27 @@ namespace MoblyUp.Infrastructure.Migrations
 
                     b.HasIndex("MontadorId");
 
+                    b.HasIndex("Status");
+
                     b.ToTable("PedidosMontagem", (string)null);
+                });
+
+            modelBuilder.Entity("MoblyUp.Domain.Entities.PedidoRecusado", b =>
+                {
+                    b.Property<Guid>("PedidoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MontadorId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("DataRecusa")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("PedidoId", "MontadorId");
+
+                    b.HasIndex("MontadorId");
+
+                    b.ToTable("PedidosRecusados", (string)null);
                 });
 
             modelBuilder.Entity("MoblyUp.Domain.Entities.Servico", b =>
@@ -223,6 +243,21 @@ namespace MoblyUp.Infrastructure.Migrations
                     b.Navigation("Cliente");
 
                     b.Navigation("Montador");
+                });
+
+            modelBuilder.Entity("MoblyUp.Domain.Entities.PedidoRecusado", b =>
+                {
+                    b.HasOne("MoblyUp.Domain.Entities.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("MontadorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MoblyUp.Domain.Entities.PedidoMontagem", null)
+                        .WithMany()
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MoblyUp.Domain.Entities.Servico", b =>

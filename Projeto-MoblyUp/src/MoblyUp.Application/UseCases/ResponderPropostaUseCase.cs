@@ -35,6 +35,12 @@ namespace MoblyUp.Application.UseCases
                 "Pagamento confirmado! ✅",
                 pedido => $"Você está liberado para montar o {pedido.TipoMovel} em {pedido.EnderecoServico}.");
 
+        // Cliente cancela o pedido antes do pagamento; o montador com proposta (se houver) é avisado
+        public Task CancelarAsync(Guid pedidoId, string clienteId) =>
+            ExecutarAsync(pedidoId, clienteId, pedido => pedido.Cancelar(),
+                "Pedido cancelado",
+                pedido => $"O cliente cancelou o pedido de {pedido.TipoMovel}.");
+
         private async Task ExecutarAsync(Guid pedidoId, string clienteId, Action<PedidoMontagem> acao,
             string tituloMontador, Func<PedidoMontagem, string> mensagemMontador)
         {

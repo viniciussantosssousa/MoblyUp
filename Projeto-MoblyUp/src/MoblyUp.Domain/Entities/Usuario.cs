@@ -42,7 +42,24 @@ namespace MoblyUp.Domain.Entities
             if (string.IsNullOrWhiteSpace(nome))
                 throw new InvalidOperationException("O nome não pode ficar vazio.");
 
+            if (nome.Trim().Length > 150)
+                throw new InvalidOperationException("O nome pode ter no máximo 150 caracteres.");
+
             Nome = nome.Trim();
+        }
+
+        public void AtualizarTelefone(string? telefone)
+        {
+            var somenteNumeros = new string((telefone ?? "").Where(char.IsDigit).ToArray());
+            if (somenteNumeros.Length != 0 && (somenteNumeros.Length < 10 || somenteNumeros.Length > 11))
+                throw new InvalidOperationException("Telefone inválido. Informe DDD + número.");
+
+            Telefone = somenteNumeros;
+        }
+
+        public void DefinirFotoPerfil(string? url)
+        {
+            FotoPerfilUrl = string.IsNullOrWhiteSpace(url) ? null : url;
         }
 
         public void DefinirRegiao(string? regiao)
@@ -63,17 +80,33 @@ namespace MoblyUp.Domain.Entities
             ExpoPushToken = null;
         }
 
+        // Exclusão de conta: mantém o histórico dos pedidos, mas apaga os dados pessoais
+        // e libera o e-mail para um novo cadastro (o índice de e-mail é único).
         public void DesativarConta()
         {
             Ativo = false;
+            Nome = "Conta excluída";
+            Email = $"excluido-{Id}@moblyup.invalid";
+            Cpf = null;
+            Telefone = "";
+            ChavePix = null;
+            FotoPerfilUrl = null;
+            DocumentoFotoUrl = null;
+            ExpoPushToken = null;
         }
 
         public void DefinirDadosBancarios(string chavePix)
         {
             if (Perfil != TipoPerfil.Montador)
                 throw new InvalidOperationException("Apenas montadores podem cadastrar chave Pix para recebimento.");
-                
-            ChavePix = chavePix;
+
+            if (string.IsNullOrWhiteSpace(chavePix))
+                throw new InvalidOperationException("A chave Pix não pode ficar vazia.");
+
+            if (chavePix.Trim().Length > 100)
+                throw new InvalidOperationException("A chave Pix é muito longa.");
+
+            ChavePix = chavePix.Trim();
         }
 
         public void ValidarDocumento(string urlFotoDocumento)

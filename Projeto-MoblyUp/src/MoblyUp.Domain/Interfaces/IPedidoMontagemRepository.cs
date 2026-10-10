@@ -14,5 +14,9 @@ namespace MoblyUp.Domain.Interfaces
         Task<IEnumerable<PedidoMontagem>> ObterPorStatusAsync(StatusPedido status);
         Task AdicionarAsync(PedidoMontagem pedido);
         Task AtualizarAsync(PedidoMontagem pedido);
+
+        // Pedidos que o montador recusou/desistiu e não devem voltar ao feed dele
+        Task RegistrarRecusaAsync(Guid pedidoId, string montadorId);
+        Task<HashSet<Guid>> ObterIdsRecusadosAsync(string montadorId);
     }
 }

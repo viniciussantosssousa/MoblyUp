@@ -43,6 +43,9 @@ namespace MoblyUp.Infrastructure.Data.Configurations
             builder.Property(p => p.Status)
                 .IsRequired();
 
+            // O feed dos montadores filtra por status a cada abertura da tela
+            builder.HasIndex(p => p.Status);
+
             builder.HasOne(p => p.Cliente)
                 .WithMany()
                 .HasForeignKey(p => p.ClienteId)

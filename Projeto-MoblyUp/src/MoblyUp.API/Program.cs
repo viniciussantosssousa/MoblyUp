@@ -52,13 +52,14 @@ builder.Services.AddScoped<IPedidoMontagemRepository, PedidoMontagemRepository>(
 builder.Services.AddHttpClient<INotificacaoService, ExpoNotificacaoService>(client =>
     client.Timeout = TimeSpan.FromSeconds(10));
 
-builder.Services.AddScoped<CriarContaMontadorUseCase>();
+builder.Services.AddScoped<GerenciarPerfilUseCase>();
 builder.Services.AddScoped<CriarPedidoMontagemUseCase>();
 builder.Services.AddScoped<AceitarPedidoUseCase>();
 builder.Services.AddScoped<EnviarFotoConclusaoUseCase>();
 builder.Services.AddScoped<ConcluirPedidoUseCase>();
 builder.Services.AddScoped<ConsultarPedidosUseCase>();
 builder.Services.AddScoped<ResponderPropostaUseCase>();
+builder.Services.AddScoped<AcoesMontadorUseCase>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

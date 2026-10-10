@@ -97,6 +97,33 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  cardActions: {
+    flexDirection: 'row',
+    marginTop: 4,
+  },
+  cardActionLeft: {
+    flex: 1,
+    marginRight: 8,
+  },
+  cardActionRight: {
+    flex: 2,
+  },
+  declineButton: {
+    borderWidth: 1,
+    borderColor: '#E53E3E',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  declineButtonText: {
+    color: '#E53E3E',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
   badgeLiberado: {
     backgroundColor: '#F0FFF4',
   },

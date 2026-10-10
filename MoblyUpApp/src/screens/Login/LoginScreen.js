@@ -1,34 +1,48 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../../contexts/AuthContext';
-import { styles } from './LoginStyles'; // <-- IMPORTAÇÃO CORRIGIDA AQUI!
+import { styles } from './LoginStyles';
+import { avisar } from '../../services/alerta';
+import { traduzirErro } from '../../services/erros';
 
 export default function LoginScreen() {
   const navigation = useNavigation();
-  const { signIn } = useContext(AuthContext);
+  const { signIn, resetPassword } = useContext(AuthContext);
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [entrando, setEntrando] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !senha) {
-      const msg = 'Preencha e-mail e senha.';
-      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Atenção', msg);
+      avisar('Atenção', 'Preencha e-mail e senha.');
       return;
     }
 
     try {
-      await signIn(email, senha);
+      setEntrando(true);
+      await signIn(email.trim(), senha);
     } catch (error) {
-      let erroMsg = 'Erro ao fazer login. Verifique suas credenciais.';
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        erroMsg = 'E-mail ou senha incorretos.';
-      }
-      if (error.code === 'permission-denied') erroMsg = 'O servidor recusou o acesso ao seu perfil (regras do Firestore).';
-      if (error.code === 'perfil-nao-encontrado') erroMsg = 'Esta conta não tem perfil cadastrado. Crie a conta novamente.';
       console.log('Erro no login:', error);
-      Platform.OS === 'web' ? window.alert(erroMsg) : Alert.alert('Erro', erroMsg);
+      avisar('Erro', traduzirErro(error, 'Erro ao fazer login. Verifique suas credenciais.'));
+    } finally {
+      setEntrando(false);
+    }
+  };
+
+  // O Firebase envia um e-mail com o link para criar uma nova senha
+  const handleEsqueciSenha = async () => {
+    if (!email.trim()) {
+      avisar('Esqueci minha senha', 'Digite seu e-mail no campo acima e toque novamente em "Esqueci minha senha".');
+      return;
+    }
+
+    try {
+      await resetPassword(email);
+      avisar('E-mail enviado', `Enviamos um link para redefinir sua senha para ${email.trim()}. Confira também a caixa de spam.`);
+    } catch (error) {
+      avisar('Erro', traduzirErro(error, 'Não foi possível enviar o e-mail de redefinição.'));
     }
   };
 
@@ -45,15 +59,19 @@ export default function LoginScreen() {
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Senha</Text>
-          <TextInput style={styles.input} placeholder="********" secureTextEntry value={senha} onChangeText={setSenha} />
+          <TextInput style={styles.input} placeholder="********" secureTextEntry value={senha} onChangeText={setSenha} onSubmitEditing={handleLogin} />
         </View>
 
-        <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
-          <Text style={styles.primaryButtonText}>Entrar</Text>
+        <TouchableOpacity style={styles.forgotButton} onPress={handleEsqueciSenha}>
+          <Text style={styles.forgotText}>Esqueci minha senha</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.primaryButton, entrando && { opacity: 0.6 }]} onPress={handleLogin} disabled={entrando}>
+          {entrando ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryButtonText}>Entrar</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.linkButton} onPress={() => navigation.navigate('Cadastro')}>
-          <Text style={styles.linkText}>Ainda não tem uma conta? Cadastre-se</Text>
+          <Text style={styles.linkText}>Ainda não tem uma conta? <Text style={styles.linkTextBold}>Cadastre-se</Text></Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

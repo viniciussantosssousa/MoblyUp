@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoblyUp.API.Extensions;
-using MoblyUp.Domain.Entities;
-using MoblyUp.Domain.Interfaces;
-using MoblyUp.Domain.Enums;
-using System.Threading.Tasks;
+using MoblyUp.Application.DTOs;
+using MoblyUp.Application.UseCases;
 
 namespace MoblyUp.API.Controllers
 {
@@ -14,152 +12,79 @@ namespace MoblyUp.API.Controllers
     [ApiController]
     public class UsuarioController : ControllerBase
     {
-        private readonly IUsuarioRepository _usuarioRepository;
+        private readonly GerenciarPerfilUseCase _perfilUseCase;
 
-        public UsuarioController(IUsuarioRepository usuarioRepository)
+        public UsuarioController(GerenciarPerfilUseCase perfilUseCase)
         {
-            _usuarioRepository = usuarioRepository;
+            _perfilUseCase = perfilUseCase;
         }
 
+        // Cria o usuário na API com o mesmo UID do Firebase (não duplica)
         [HttpPost]
-        public async Task<IActionResult> SincronizarUsuario([FromBody] SincronizarUsuarioRequest request)
-        {
-            // ID e e-mail vêm do token: ninguém consegue sincronizar em nome de outra conta
-            var id = User.ObterUsuarioId();
-            var email = User.ObterEmail() ?? request.Email;
-
-            // Verifica se o usuário já existe para não duplicar
-            var usuarioExistente = await _usuarioRepository.ObterPorIdAsync(id);
-            if (usuarioExistente != null)
+        public Task<IActionResult> SincronizarUsuario([FromBody] SincronizarUsuarioRequest request) =>
+            Executar(async () =>
             {
-                // Contas antigas ainda não tinham a região salva na API
-                if (!string.IsNullOrWhiteSpace(request.Regiao) && usuarioExistente.Regiao != request.Regiao.Trim())
-                {
-                    usuarioExistente.DefinirRegiao(request.Regiao);
-                    await _usuarioRepository.AtualizarAsync(usuarioExistente);
-                }
-                return Ok(new { mensagem = "Usuário já sincronizado.", id = usuarioExistente.Id });
-            }
-
-            var perfil = request.Tipo.ToLower() == "montador" ? TipoPerfil.Montador : TipoPerfil.Cliente;
-
-            // Cria a entidade usando o ID gerado lá no Firebase
-            var usuario = new Usuario(
-                request.Nome,
-                null, // CPF ainda não é coletado no cadastro do app
-                email,
-                "", // Senha vazia pois o Firebase já cuida da segurança
-                "", // Telefone provisório
-                perfil,
-                id
-            );
-            usuario.DefinirRegiao(request.Regiao);
-
-            await _usuarioRepository.AdicionarAsync(usuario);
-            return Created("", new { mensagem = "Usuário sincronizado com sucesso!", id = usuario.Id });
-        }
+                var criado = await _perfilUseCase.SincronizarAsync(User.ObterUsuarioId(), User.ObterEmail(), request);
+                return criado
+                    ? StatusCode(201, new { mensagem = "Usuário sincronizado com sucesso!" })
+                    : Ok(new { mensagem = "Usuário já sincronizado." });
+            });
 
         [HttpGet("me")]
         public async Task<IActionResult> ObterPerfil()
         {
-            var usuario = await _usuarioRepository.ObterPorIdAsync(User.ObterUsuarioId());
-            if (usuario == null)
-                return NotFound(new { erro = "Usuário não encontrado." });
-
-            // Nunca devolve SenhaHash, CPF ou documento
-            return Ok(new
-            {
-                id = usuario.Id,
-                nome = usuario.Nome,
-                email = usuario.Email,
-                tipo = usuario.Perfil == TipoPerfil.Montador ? "montador" : "cliente",
-                chavePix = usuario.ChavePix
-            });
+            var perfil = await _perfilUseCase.ObterAsync(User.ObterUsuarioId());
+            return perfil == null ? NotFound(new { erro = "Usuário não encontrado." }) : Ok(perfil);
         }
 
         [HttpPut("me")]
-        public async Task<IActionResult> AtualizarPerfil([FromBody] AtualizarPerfilRequest request)
-        {
-            var usuario = await _usuarioRepository.ObterPorIdAsync(User.ObterUsuarioId());
-            if (usuario == null)
-                return NotFound(new { erro = "Usuário não encontrado." });
-
-            try
+        public Task<IActionResult> AtualizarPerfil([FromBody] AtualizarPerfilRequest request) =>
+            Executar(async () =>
             {
-                usuario.AtualizarNome(request.Nome);
-
-                // A chave Pix é usada para o repasse do valor líquido ao montador
-                if (usuario.Perfil == TipoPerfil.Montador && request.ChavePix != null)
-                    usuario.DefinirDadosBancarios(request.ChavePix.Trim());
-
-                await _usuarioRepository.AtualizarAsync(usuario);
+                await _perfilUseCase.AtualizarAsync(User.ObterUsuarioId(), request);
                 return Ok(new { mensagem = "Perfil atualizado com sucesso!" });
-            }
-            catch (InvalidOperationException ex)
+            });
+
+        // Exclui a conta na API (o app exclui o login no Firebase logo em seguida)
+        [HttpDelete("me")]
+        public Task<IActionResult> ExcluirConta() =>
+            Executar(async () =>
             {
-                return BadRequest(new { erro = ex.Message });
-            }
-        }
+                await _perfilUseCase.ExcluirContaAsync(User.ObterUsuarioId());
+                return NoContent();
+            });
 
         // Registra o aparelho do usuário logado para receber notificações push
         [HttpPut("me/push-token")]
-        public async Task<IActionResult> RegistrarPushToken([FromBody] PushTokenRequest request)
-        {
-            var usuario = await _usuarioRepository.ObterPorIdAsync(User.ObterUsuarioId());
-            if (usuario == null)
-                return NotFound(new { erro = "Usuário não encontrado." });
-
-            try
+        public Task<IActionResult> RegistrarPushToken([FromBody] PushTokenRequest request) =>
+            Executar(async () =>
             {
-                // Se outra conta entrou antes neste mesmo aparelho, ela deixa de receber aqui
-                foreach (var outro in await _usuarioRepository.ObterPorPushTokenAsync(request.Token))
-                {
-                    if (outro.Id == usuario.Id) continue;
-                    outro.RemoverPushToken();
-                    await _usuarioRepository.AtualizarAsync(outro);
-                }
-
-                usuario.RegistrarPushToken(request.Token);
-                await _usuarioRepository.AtualizarAsync(usuario);
+                await _perfilUseCase.RegistrarPushTokenAsync(User.ObterUsuarioId(), request.Token);
                 return Ok(new { mensagem = "Notificações ativadas." });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { erro = ex.Message });
-            }
-        }
+            });
 
         // Chamado no logout: o aparelho para de receber notificações dessa conta
         [HttpDelete("me/push-token")]
         public async Task<IActionResult> RemoverPushToken()
         {
-            var usuario = await _usuarioRepository.ObterPorIdAsync(User.ObterUsuarioId());
-            if (usuario == null)
-                return NotFound(new { erro = "Usuário não encontrado." });
-
-            usuario.RemoverPushToken();
-            await _usuarioRepository.AtualizarAsync(usuario);
+            await _perfilUseCase.RemoverPushTokenAsync(User.ObterUsuarioId());
             return NoContent();
         }
-    }
 
-    public class PushTokenRequest
-    {
-        public string Token { get; set; } = string.Empty;
-    }
-
-    // DTO simplificado para receber os dados do React Native
-    public class SincronizarUsuarioRequest
-    {
-        public string Nome { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Tipo { get; set; } = string.Empty;
-        public string? Regiao { get; set; }
-    }
-
-    public class AtualizarPerfilRequest
-    {
-        public string Nome { get; set; } = string.Empty;
-        public string? ChavePix { get; set; }
+        private async Task<IActionResult> Executar(Func<Task<IActionResult>> acao)
+        {
+            try
+            {
+                return await acao();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { erro = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { erro = ex.Message });
+            }
+        }
     }
 }

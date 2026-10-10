@@ -6,9 +6,13 @@ import {
   signInWithEmailAndPassword, 
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  updatePassword
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  sendPasswordResetEmail,
+  deleteUser
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'; // <-- Funções do banco de dados
+import { doc, setDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'; // <-- Funções do banco de dados
 import api from '../services/api';
 import { registrarNotificacoes, removerNotificacoes } from '../services/notificacoes';
 
@@ -121,6 +125,15 @@ export const AuthProvider = ({ children }) => {
       const userData = { id: uid, ...docSnap.data() };
       // Cobre contas criadas antes da sincronização existir
       await sincronizarComApi(userData);
+
+      // A foto de perfil fica só na API
+      try {
+        const { data } = await api.get('/usuarios/me');
+        userData.fotoPerfilUrl = data.fotoPerfilUrl;
+      } catch (error) {
+        console.log('Não foi possível carregar a foto do perfil:', error);
+      }
+
       setUser(userData);
       await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(userData));
     } else {
@@ -130,30 +143,73 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signOut = async () => {
-    // Precisa ser antes do logout do Firebase, enquanto ainda há token para a API
-    await removerNotificacoes();
-    await firebaseSignOut(auth);
+  const limparSessaoLocal = async () => {
     await AsyncStorage.removeItem('@MoblyUp:user');
     setUser(null);
   };
 
-  // PERFIL: atualiza nome (Firestore + API), chave Pix (API, só montador) e senha (Firebase)
-  const updateUser = async ({ nome, chavePix, senha }) => {
-    await api.put('/usuarios/me', { nome, chavePix });
-    await updateDoc(doc(db, 'usuarios', user.id), { nome });
-
-    if (senha) {
-      await updatePassword(auth.currentUser, senha);
+  const signOut = async () => {
+    try {
+      // Precisa ser antes do logout do Firebase, enquanto ainda há token para a API
+      await removerNotificacoes();
+      await firebaseSignOut(auth);
+    } finally {
+      // Mesmo sem internet o usuário sai do app
+      await limparSessaoLocal();
     }
+  };
 
-    const userData = { ...user, nome };
+  // PERFIL: dados na API (fonte principal) e o essencial no Firestore (nome e região do login)
+  const updateUser = async ({ nome, telefone, regiao, chavePix, fotoPerfilUrl }) => {
+    await api.put('/usuarios/me', { nome, telefone, regiao, chavePix, fotoPerfilUrl });
+
+    const dadosFirestore = { nome };
+    if (regiao) dadosFirestore.regiao = regiao;
+    await updateDoc(doc(db, 'usuarios', user.id), dadosFirestore);
+
+    const userData = {
+      ...user,
+      nome,
+      ...(regiao ? { regiao } : {}),
+      ...(fotoPerfilUrl !== undefined ? { fotoPerfilUrl } : {}),
+    };
     setUser(userData);
     await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(userData));
   };
 
+  // O Firebase exige login recente para ações sensíveis: confirmamos com a senha atual
+  const reautenticar = async (senhaAtual) => {
+    const credencial = EmailAuthProvider.credential(auth.currentUser.email, senhaAtual);
+    await reauthenticateWithCredential(auth.currentUser, credencial);
+  };
+
+  const changePassword = async (senhaAtual, novaSenha) => {
+    await reautenticar(senhaAtual);
+    await updatePassword(auth.currentUser, novaSenha);
+  };
+
+  // "Esqueci minha senha": o Firebase envia um link de redefinição para o e-mail
+  const resetPassword = async (email) => {
+    await sendPasswordResetEmail(auth, email.trim());
+  };
+
+  // Exclui a conta: API (anonimiza os dados e libera o e-mail), Firestore e o login no Firebase.
+  // A API recusa se houver serviço em negociação ou em andamento.
+  const deleteAccount = async (senhaAtual) => {
+    await reautenticar(senhaAtual);
+    await api.delete('/usuarios/me');
+    await deleteDoc(doc(db, 'usuarios', user.id)).catch((error) =>
+      console.log('Perfil do Firestore não foi removido:', error));
+    await deleteUser(auth.currentUser);
+    await limparSessaoLocal();
+  };
+
   return (
-    <AuthContext.Provider value={{ signed: !!user, user, loading, signIn, signUp, signOut, updateUser }}>
+    <AuthContext.Provider value={{
+      signed: !!user, user, loading,
+      signIn, signUp, signOut,
+      updateUser, changePassword, resetPassword, deleteAccount,
+    }}>
       {children}
     </AuthContext.Provider>
   );

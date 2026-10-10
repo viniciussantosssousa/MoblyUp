@@ -2,6 +2,29 @@ import { StyleSheet, Platform } from 'react-native';
 import { colors } from '../../theme/colors';
 
 export const styles = StyleSheet.create({
+  headerAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  orderCardCancelado: {
+    opacity: 0.6,
+  },
+  statusContainerCancelado: {
+    backgroundColor: '#FFF5F5',
+  },
+  statusTextCancelado: {
+    color: '#C53030',
+  },
+  // Proposta aguardando resposta do cliente: chama atenção
+  statusContainerDestaque: {
+    backgroundColor: '#EBF8FF',
+  },
+  statusTextDestaque: {
+    color: '#2B6CB0',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F5F7FA',

@@ -21,6 +21,7 @@ namespace MoblyUp.API.Controllers
         private readonly ConcluirPedidoUseCase _concluirPedidoUseCase;
         private readonly ConsultarPedidosUseCase _consultarPedidosUseCase;
         private readonly ResponderPropostaUseCase _responderPropostaUseCase;
+        private readonly AcoesMontadorUseCase _acoesMontadorUseCase;
 
         public PedidoMontagemController(
             CriarPedidoMontagemUseCase criarPedidoUseCase,
@@ -28,9 +29,11 @@ namespace MoblyUp.API.Controllers
             EnviarFotoConclusaoUseCase enviarFotoUseCase,
             ConcluirPedidoUseCase concluirPedidoUseCase,
             ConsultarPedidosUseCase consultarPedidosUseCase,
-            ResponderPropostaUseCase responderPropostaUseCase)
+            ResponderPropostaUseCase responderPropostaUseCase,
+            AcoesMontadorUseCase acoesMontadorUseCase)
         {
             _responderPropostaUseCase = responderPropostaUseCase;
+            _acoesMontadorUseCase = acoesMontadorUseCase;
             _criarPedidoUseCase = criarPedidoUseCase;
             _aceitarPedidoUseCase = aceitarPedidoUseCase;
             _enviarFotoUseCase = enviarFotoUseCase;
@@ -87,6 +90,24 @@ namespace MoblyUp.API.Controllers
         public Task<IActionResult> ConfirmarPagamento(Guid id) =>
             Executar(() => _responderPropostaUseCase.ConfirmarPagamentoAsync(id, UsuarioId),
                 "Pagamento confirmado! O montador foi liberado para o serviço.");
+
+        // Cliente cancela o pedido (permitido até antes do pagamento)
+        [HttpPut("{id}/cancelar")]
+        public Task<IActionResult> CancelarPedido(Guid id) =>
+            Executar(() => _responderPropostaUseCase.CancelarAsync(id, UsuarioId),
+                "Pedido cancelado.");
+
+        // Montador recusa um pedido do feed: ele deixa de aparecer só para este montador
+        [HttpPut("{id}/recusar")]
+        public Task<IActionResult> RecusarPedido(Guid id) =>
+            Executar(() => _acoesMontadorUseCase.RecusarPedidoAsync(id, UsuarioId),
+                "Pedido recusado. Ele não aparecerá mais para você.");
+
+        // Montador desiste da proposta antes do pagamento (o pedido volta a ficar disponível)
+        [HttpPut("{id}/desistir")]
+        public Task<IActionResult> DesistirDoPedido(Guid id) =>
+            Executar(() => _acoesMontadorUseCase.DesistirAsync(id, UsuarioId),
+                "Você desistiu deste serviço. O cliente foi avisado.");
 
         [HttpPut("{id}/foto-conclusao")]
         public Task<IActionResult> EnviarFoto(Guid id, [FromBody] EnviarFotoRequest request) =>

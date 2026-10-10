@@ -70,6 +70,16 @@ export const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
   },
+  cancelButton: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    marginBottom: 24,
+  },
+  cancelButtonText: {
+    color: '#E53E3E',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
   foto: {
     width: '100%',
     height: 220,

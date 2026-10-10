@@ -153,5 +153,15 @@ export const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  declineButton: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    marginTop: 8,
+  },
+  declineButtonText: {
+    color: '#E53E3E',
+    fontSize: 15,
+    fontWeight: 'bold',
   }
 });

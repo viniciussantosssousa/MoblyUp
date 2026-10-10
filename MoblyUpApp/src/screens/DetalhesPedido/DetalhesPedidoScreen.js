@@ -62,8 +62,35 @@ export default function DetalhesPedidoScreen() {
     }
   };
 
+  const handleCancelar = async () => {
+    const ok = await confirmar(
+      'Cancelar pedido',
+      pedidoData.nomeMontador
+        ? `O montador ${pedidoData.nomeMontador} será avisado do cancelamento. Deseja cancelar?`
+        : 'O pedido deixará de aparecer para os montadores. Deseja cancelar?',
+      'Cancelar pedido'
+    );
+    if (!ok) return;
+
+    try {
+      setProcessando(true);
+      await api.put(`/pedidos/${pedidoId}/cancelar`);
+      await carregarPedido();
+    } catch (error) {
+      avisar('Erro', mensagemDeErro(error, 'Não foi possível cancelar o pedido.'));
+    } finally {
+      setProcessando(false);
+    }
+  };
+
   const status = pedidoData.status;
   const etapa = ETAPAS[status] || ETAPAS[STATUS_PEDIDO.DISPONIVEL];
+  // Depois do pagamento o cancelamento só pelo suporte (há valor a estornar)
+  const podeCancelar = [
+    STATUS_PEDIDO.DISPONIVEL,
+    STATUS_PEDIDO.AGUARDANDO_APROVACAO_CLIENTE,
+    STATUS_PEDIDO.AGUARDANDO_PAGAMENTO,
+  ].includes(status);
   const concluido = status === STATUS_PEDIDO.CONCLUIDO;
   const textoEtapa = concluido
     ? `A montagem foi finalizada com sucesso em ${formatarData(pedidoData.dataConclusao)}.`
@@ -154,6 +181,16 @@ export default function DetalhesPedidoScreen() {
             </Text>
           </View>
         </View>
+
+        {podeCancelar && (
+          <TouchableOpacity
+            style={[styles.cancelButton, processando && { opacity: 0.6 }]}
+            disabled={processando}
+            onPress={handleCancelar}
+          >
+            <Text style={styles.cancelButtonText}>Cancelar pedido</Text>
+          </TouchableOpacity>
+        )}
 
       </ScrollView>
     </View>
