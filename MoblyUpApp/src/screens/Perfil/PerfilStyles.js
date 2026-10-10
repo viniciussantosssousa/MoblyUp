@@ -138,6 +138,20 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#9AE6B4',
   },
+  verPublicoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  verPublicoText: {
+    color: '#3182CE',
+    fontWeight: '600',
+    marginLeft: 6,
+  },
   statsReputacao: {
     fontSize: 14,
     fontWeight: 'bold',

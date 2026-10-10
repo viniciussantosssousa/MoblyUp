@@ -13,10 +13,31 @@ namespace MoblyUp.API.Controllers
     public class UsuarioController : ControllerBase
     {
         private readonly GerenciarPerfilUseCase _perfilUseCase;
+        private readonly PerfilPublicoUseCase _perfilPublicoUseCase;
 
-        public UsuarioController(GerenciarPerfilUseCase perfilUseCase)
+        public UsuarioController(GerenciarPerfilUseCase perfilUseCase, PerfilPublicoUseCase perfilPublicoUseCase)
         {
             _perfilUseCase = perfilUseCase;
+            _perfilPublicoUseCase = perfilPublicoUseCase;
+        }
+
+        // Perfil de outro usuário: reputação, comentários e contato (quando liberado).
+        // Só para quem tem (ou pode ter) um serviço com ele; nunca expõe CPF, e-mail ou Pix.
+        [HttpGet("{id}/perfil-publico")]
+        public async Task<IActionResult> ObterPerfilPublico(string id)
+        {
+            try
+            {
+                return Ok(await _perfilPublicoUseCase.ObterAsync(id, User.ObterUsuarioId()));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { erro = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { erro = ex.Message });
+            }
         }
 
         // Cria o usuário na API com o mesmo UID do Firebase (não duplica)

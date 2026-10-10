@@ -38,6 +38,26 @@ namespace MoblyUp.Application.UseCases
             await _pedidoRepository.RegistrarRecusaAsync(pedidoId, montadorId);
         }
 
+        // Montador avalia o cliente depois da conclusão (uma única vez)
+        public async Task AvaliarClienteAsync(Guid pedidoId, string montadorId, int nota, string? comentario)
+        {
+            var pedido = await _pedidoRepository.ObterPorIdAsync(pedidoId);
+            if (pedido == null)
+                throw new Exception("Pedido não encontrado.");
+
+            if (pedido.MontadorId != montadorId)
+                throw new UnauthorizedAccessException("Apenas o montador que fez o serviço pode avaliar o cliente.");
+
+            pedido.AvaliarCliente(nota, comentario);
+            await _pedidoRepository.AtualizarAsync(pedido);
+
+            await _notificacaoService.NotificarUsuarioAsync(
+                pedido.ClienteId,
+                "Você recebeu uma avaliação ⭐",
+                $"O montador deu {nota} {(nota == 1 ? "estrela" : "estrelas")} para você pela montagem do {pedido.TipoMovel}.",
+                pedido.Id);
+        }
+
         public async Task DesistirAsync(Guid pedidoId, string montadorId)
         {
             var pedido = await _pedidoRepository.ObterPorIdAsync(pedidoId);

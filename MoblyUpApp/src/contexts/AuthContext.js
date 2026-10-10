@@ -37,16 +37,33 @@ const sincronizarComApi = async (userData) => {
   }
 };
 
-// Dados que ficam só na API: foto de perfil e se o CPF já foi cadastrado.
+// A API é a fonte da verdade do perfil (nome, região, foto, CPF). O Firestore guarda só
+// uma cópia usada no login; se as duas divergirem, prevalece a API.
 // Retorna {} se a API não responder (o app segue com o que tem salvo).
 const carregarDadosDaApi = async () => {
   try {
     const { data } = await api.get('/usuarios/me');
-    return { fotoPerfilUrl: data.fotoPerfilUrl, cpfCadastrado: data.cpfCadastrado };
+    return {
+      nome: data.nome,
+      ...(data.regiao ? { regiao: data.regiao } : {}),
+      fotoPerfilUrl: data.fotoPerfilUrl,
+      cpfCadastrado: data.cpfCadastrado,
+    };
   } catch (error) {
     console.log('Não foi possível carregar o perfil da API:', error);
     return {};
   }
+};
+
+// Corrige a cópia do Firestore quando ela ficou diferente da API (ex.: uma gravação que falhou)
+const alinharFirestore = async (local, daApi) => {
+  const diferencas = {};
+  if (daApi.nome && daApi.nome !== local.nome) diferencas.nome = daApi.nome;
+  if (daApi.regiao && daApi.regiao !== local.regiao) diferencas.regiao = daApi.regiao;
+  if (!Object.keys(diferencas).length) return;
+
+  await updateDoc(doc(db, 'usuarios', local.id), diferencas)
+    .catch((error) => console.log('Não foi possível alinhar o perfil no Firestore:', error));
 };
 
 export const AuthProvider = ({ children }) => {
@@ -66,11 +83,12 @@ export const AuthProvider = ({ children }) => {
         if (cadastrandoRef.current) return;
 
         if (firebaseUser) {
-          const storedUser = await AsyncStorage.getItem('@MoblyUp:user');
+          const storedUser = JSON.parse((await AsyncStorage.getItem('@MoblyUp:user')) || 'null');
           let userData = null;
 
-          if (storedUser) {
-            userData = JSON.parse(storedUser);
+          // Só reaproveita o que está salvo se for da MESMA conta logada no Firebase
+          if (storedUser && storedUser.id === firebaseUser.uid) {
+            userData = storedUser;
             setUser(userData);
           } else {
             // Se não tem no AsyncStorage, busca do Firestore
@@ -89,7 +107,10 @@ export const AuthProvider = ({ children }) => {
               const dadosApi = await carregarDadosDaApi();
               // Se o usuário saiu enquanto a API respondia, não "reloga" a tela
               const aindaLogado = auth.currentUser?.uid === dadosLocais.id;
-              if (aindaLogado && Object.keys(dadosApi).length) await salvarUsuario({ ...dadosLocais, ...dadosApi });
+              if (aindaLogado && Object.keys(dadosApi).length) {
+                await salvarUsuario({ ...dadosLocais, ...dadosApi });
+                await alinharFirestore(dadosLocais, dadosApi);
+              }
             })();
           }
         } else {
@@ -164,8 +185,10 @@ export const AuthProvider = ({ children }) => {
       // Cobre contas criadas antes da sincronização existir
       await sincronizarComApi(userData);
 
-      // Foto de perfil e situação do CPF ficam só na API
-      await salvarUsuario({ ...userData, ...(await carregarDadosDaApi()) });
+      // A API é a fonte da verdade (nome, região, foto, CPF)
+      const dadosApi = await carregarDadosDaApi();
+      await salvarUsuario({ ...userData, ...dadosApi });
+      await alinharFirestore(userData, dadosApi);
     } else {
       // Login existe mas o perfil não (cadastro interrompido): não deixa o usuário "meio logado"
       await firebaseSignOut(auth);
@@ -221,20 +244,22 @@ export const AuthProvider = ({ children }) => {
     await api.put('/usuarios/me', { nome, telefone, regiao, chavePix, fotoPerfilUrl });
 
     // Usuários do modo de teste não têm perfil no Firestore
-    if (!user?.teste) {
-      const dadosFirestore = { nome };
-      if (regiao) dadosFirestore.regiao = regiao;
-      await updateDoc(doc(db, 'usuarios', user.id), dadosFirestore);
-    }
-
+    // A API já gravou: atualiza o app ANTES do Firestore, para a tela nunca ficar com o nome antigo
     const userData = {
       ...user,
       nome,
       ...(regiao ? { regiao } : {}),
       ...(fotoPerfilUrl !== undefined ? { fotoPerfilUrl } : {}),
     };
-    setUser(userData);
-    await AsyncStorage.setItem('@MoblyUp:user', JSON.stringify(userData));
+    await salvarUsuario(userData);
+
+    // Cópia no Firestore (usuários do modo de teste não têm). Se falhar, é corrigida no próximo login.
+    if (!user?.teste) {
+      const dadosFirestore = { nome };
+      if (regiao) dadosFirestore.regiao = regiao;
+      await updateDoc(doc(db, 'usuarios', user.id), dadosFirestore)
+        .catch((error) => console.log('Perfil salvo na API, mas não no Firestore:', error));
+    }
   };
 
   // O Firebase exige login recente para ações sensíveis: confirmamos com a senha atual

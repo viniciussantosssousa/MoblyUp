@@ -8,6 +8,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import api, { mensagemDeErro } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
+import { ResumoReputacao } from '../../components/Reputacao';
 
 // Serviços do montador que ainda exigem acompanhamento
 const STATUS_ATIVOS = [
@@ -147,6 +148,14 @@ export default function HomeMontadorScreen() {
                     <Text style={styles.orderDetailText}>Você recebe {formatarMoeda(pedido.valorMontador)}</Text>
                   </View>
 
+                  <ResumoReputacao
+                    style={styles.clienteRow}
+                    media={pedido.mediaAvaliacaoCliente}
+                    total={pedido.totalAvaliacoesCliente}
+                    rotuloLink={liberado ? `Contato de ${pedido.nomeCliente}` : `Cliente: ${pedido.nomeCliente}`}
+                    onPress={() => navigation.navigate('PerfilPublico', { usuarioId: pedido.clienteId })}
+                  />
+
                   {liberado ? (
                     <TouchableOpacity
                       style={styles.actionButton}
@@ -206,6 +215,14 @@ export default function HomeMontadorScreen() {
                   <Ionicons name="location-outline" size={16} color="#718096" />
                   <Text style={styles.orderDetailText}>{pedido.enderecoServico || 'Endereço não informado'}</Text>
                 </View>
+
+                <ResumoReputacao
+                  style={styles.clienteRow}
+                  media={pedido.mediaAvaliacaoCliente}
+                  total={pedido.totalAvaliacoesCliente}
+                  rotuloLink={`Cliente: ${pedido.nomeCliente}`}
+                  onPress={() => navigation.navigate('PerfilPublico', { usuarioId: pedido.clienteId })}
+                />
 
                 <View style={styles.cardActions}>
                   <TouchableOpacity

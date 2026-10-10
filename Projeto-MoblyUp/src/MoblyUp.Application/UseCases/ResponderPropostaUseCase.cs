@@ -37,7 +37,7 @@ namespace MoblyUp.Application.UseCases
 
         // Cliente avalia o montador depois da conclusão (uma única vez)
         public Task AvaliarAsync(Guid pedidoId, string clienteId, int nota, string? comentario) =>
-            ExecutarAsync(pedidoId, clienteId, pedido => pedido.Avaliar(nota, comentario),
+            ExecutarAsync(pedidoId, clienteId, pedido => pedido.AvaliarMontador(nota, comentario),
                 "Você recebeu uma avaliação ⭐",
                 pedido => $"O cliente deu {nota} {(nota == 1 ? "estrela" : "estrelas")} pela montagem do {pedido.TipoMovel}.");
 

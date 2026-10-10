@@ -24,10 +24,16 @@ namespace MoblyUp.Domain.Entities
         public DateTime? DataConclusao { get; private set; }
         public string? FotoConclusaoUrl { get; private set; }
 
-        // Avaliação do cliente sobre o montador (1 a 5 estrelas), feita uma vez após a conclusão
-        public int? AvaliacaoNota { get; private set; }
-        public string? AvaliacaoComentario { get; private set; }
-        public DateTime? DataAvaliacao { get; private set; }
+        // Avaliações mútuas (1 a 5 estrelas), cada lado avalia uma vez após a conclusão.
+        // "Montador" = avaliação RECEBIDA pelo montador (dada pelo cliente).
+        public int? NotaMontador { get; private set; }
+        public string? ComentarioMontador { get; private set; }
+        public DateTime? DataAvaliacaoMontador { get; private set; }
+
+        // "Cliente" = avaliação RECEBIDA pelo cliente (dada pelo montador).
+        public int? NotaCliente { get; private set; }
+        public string? ComentarioCliente { get; private set; }
+        public DateTime? DataAvaliacaoCliente { get; private set; }
 
         public Usuario Cliente { get; private set; }
         public Usuario? Montador { get; private set; }
@@ -141,13 +147,31 @@ namespace MoblyUp.Domain.Entities
             DataConclusao = DateTime.UtcNow;
         }
 
-        public void Avaliar(int nota, string? comentario)
+        // Cliente avalia o montador
+        public void AvaliarMontador(int nota, string? comentario)
+        {
+            var texto = ValidarAvaliacao(NotaMontador, nota, comentario, "Você já avaliou este montador.");
+            NotaMontador = nota;
+            ComentarioMontador = texto;
+            DataAvaliacaoMontador = DateTime.UtcNow;
+        }
+
+        // Montador avalia o cliente
+        public void AvaliarCliente(int nota, string? comentario)
+        {
+            var texto = ValidarAvaliacao(NotaCliente, nota, comentario, "Você já avaliou este cliente.");
+            NotaCliente = nota;
+            ComentarioCliente = texto;
+            DataAvaliacaoCliente = DateTime.UtcNow;
+        }
+
+        private string? ValidarAvaliacao(int? notaAtual, int nota, string? comentario, string mensagemJaAvaliado)
         {
             if (Status != StatusPedido.Concluido)
                 throw new Exception("Só é possível avaliar depois que o serviço for concluído.");
 
-            if (AvaliacaoNota.HasValue)
-                throw new Exception("Este serviço já foi avaliado.");
+            if (notaAtual.HasValue)
+                throw new Exception(mensagemJaAvaliado);
 
             if (nota < 1 || nota > 5)
                 throw new Exception("A nota deve ser de 1 a 5 estrelas.");
@@ -156,9 +180,7 @@ namespace MoblyUp.Domain.Entities
             if (texto?.Length > 500)
                 throw new Exception("O comentário pode ter no máximo 500 caracteres.");
 
-            AvaliacaoNota = nota;
-            AvaliacaoComentario = string.IsNullOrEmpty(texto) ? null : texto;
-            DataAvaliacao = DateTime.UtcNow;
+            return string.IsNullOrEmpty(texto) ? null : texto;
         }
     }
 }

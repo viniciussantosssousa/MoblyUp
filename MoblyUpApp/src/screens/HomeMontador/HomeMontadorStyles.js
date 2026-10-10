@@ -97,6 +97,13 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  clienteRow: {
+    marginTop: 4,
+    marginBottom: 4,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
   cardActions: {
     flexDirection: 'row',
     marginTop: 4,

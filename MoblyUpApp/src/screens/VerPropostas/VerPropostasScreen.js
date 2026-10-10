@@ -7,7 +7,7 @@ import { colors } from '../../theme/colors';
 import api, { mensagemDeErro } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
-import Estrelas, { descreverReputacao } from '../../components/Estrelas';
+import { ResumoReputacao } from '../../components/Reputacao';
 
 export default function VerPropostasScreen() {
   const navigation = useNavigation();
@@ -110,14 +110,13 @@ export default function VerPropostasScreen() {
               <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.montadorNome}>{pedido.nomeMontador || 'Montador'}</Text>
-                <View style={styles.reputacaoRow}>
-                  {pedido.totalAvaliacoesMontador > 0 && (
-                    <Estrelas nota={pedido.mediaAvaliacaoMontador} tamanho={13} style={{ marginRight: 6 }} />
-                  )}
-                  <Text style={styles.reputacaoTexto}>
-                    {descreverReputacao(pedido.mediaAvaliacaoMontador, pedido.totalAvaliacoesMontador)}
-                  </Text>
-                </View>
+                <ResumoReputacao
+                  style={styles.reputacaoRow}
+                  media={pedido.mediaAvaliacaoMontador}
+                  total={pedido.totalAvaliacoesMontador}
+                  rotuloLink="Ver perfil e avaliações"
+                  onPress={() => navigation.navigate('PerfilPublico', { usuarioId: pedido.montadorId })}
+                />
               </View>
             </View>
 

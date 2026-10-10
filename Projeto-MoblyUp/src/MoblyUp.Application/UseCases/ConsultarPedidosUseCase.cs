@@ -36,27 +36,20 @@ namespace MoblyUp.Application.UseCases
             }
 
             var resposta = PedidoMontagemResponse.DeEntidade(pedido);
-
-            if (pedido.MontadorId != null)
-            {
-                var (media, total) = await _pedidoRepository.ObterResumoAvaliacoesAsync(pedido.MontadorId);
-                resposta.MediaAvaliacaoMontador = total > 0 ? Math.Round(media, 1) : null;
-                resposta.TotalAvaliacoesMontador = total;
-            }
-
+            await PreencherReputacoesAsync(new[] { resposta });
             return resposta;
         }
 
         public async Task<IEnumerable<PedidoMontagemResponse>> ObterDoClienteAsync(string clienteId)
         {
             var pedidos = await _pedidoRepository.ObterPorClienteIdAsync(clienteId);
-            return Ordenar(pedidos.Select(PedidoMontagemResponse.DeEntidade));
+            return await MontarListaAsync(pedidos.Select(PedidoMontagemResponse.DeEntidade));
         }
 
         public async Task<IEnumerable<PedidoMontagemResponse>> ObterDoMontadorAsync(string montadorId)
         {
             var pedidos = await _pedidoRepository.ObterPorMontadorIdAsync(montadorId);
-            return Ordenar(pedidos.Select(PedidoMontagemResponse.DeEntidade));
+            return await MontarListaAsync(pedidos.Select(PedidoMontagemResponse.DeEntidade));
         }
 
         // Pedidos abertos para propostas (somente montadores). A região vem no formato
@@ -79,18 +72,44 @@ namespace MoblyUp.Application.UseCases
                     p.EnderecoServico.EndsWith(regiaoNormalizada, StringComparison.OrdinalIgnoreCase));
             }
 
-            return Ordenar(pedidos.Select(PedidoMontagemResponse.DeEntidade));
+            return await MontarListaAsync(pedidos.Select(PedidoMontagemResponse.DeEntidade));
+        }
+
+        private async Task<IEnumerable<PedidoMontagemResponse>> MontarListaAsync(IEnumerable<PedidoMontagemResponse> pedidos)
+        {
+            var lista = pedidos.OrderByDescending(p => p.DataCriacao).ToList();
+            await PreencherReputacoesAsync(lista);
+            return lista;
+        }
+
+        // Reputação de cliente e montador de cada pedido, com duas consultas agrupadas no total
+        private async Task PreencherReputacoesAsync(IReadOnlyCollection<PedidoMontagemResponse> pedidos)
+        {
+            var clientes = await _pedidoRepository.ObterResumosReputacaoAsync(
+                pedidos.Select(p => p.ClienteId), TipoPerfil.Cliente);
+            var montadores = await _pedidoRepository.ObterResumosReputacaoAsync(
+                pedidos.Where(p => p.MontadorId != null).Select(p => p.MontadorId!), TipoPerfil.Montador);
+
+            foreach (var pedido in pedidos)
+            {
+                if (clientes.TryGetValue(pedido.ClienteId, out var cliente))
+                {
+                    pedido.MediaAvaliacaoCliente = Math.Round(cliente.Media, 1);
+                    pedido.TotalAvaliacoesCliente = cliente.Total;
+                }
+
+                if (pedido.MontadorId != null && montadores.TryGetValue(pedido.MontadorId, out var montador))
+                {
+                    pedido.MediaAvaliacaoMontador = Math.Round(montador.Media, 1);
+                    pedido.TotalAvaliacoesMontador = montador.Total;
+                }
+            }
         }
 
         private async Task<bool> EhMontadorAsync(string usuarioId)
         {
             var usuario = await _usuarioRepository.ObterPorIdAsync(usuarioId);
             return usuario?.Perfil == TipoPerfil.Montador;
-        }
-
-        private static IEnumerable<PedidoMontagemResponse> Ordenar(IEnumerable<PedidoMontagemResponse> pedidos)
-        {
-            return pedidos.OrderByDescending(p => p.DataCriacao).ToList();
         }
     }
 }

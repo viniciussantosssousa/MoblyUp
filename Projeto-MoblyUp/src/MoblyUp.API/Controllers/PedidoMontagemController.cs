@@ -92,9 +92,15 @@ namespace MoblyUp.API.Controllers
                 "Pagamento confirmado! O montador foi liberado para o serviço.");
 
         // Cliente avalia o montador (1 a 5 estrelas) depois da conclusão
-        [HttpPut("{id}/avaliar")]
-        public Task<IActionResult> Avaliar(Guid id, [FromBody] AvaliarPedidoRequest request) =>
+        [HttpPut("{id}/avaliar-montador")]
+        public Task<IActionResult> AvaliarMontador(Guid id, [FromBody] AvaliarPedidoRequest request) =>
             Executar(() => _responderPropostaUseCase.AvaliarAsync(id, UsuarioId, request.Nota, request.Comentario),
+                "Obrigado pela avaliação!");
+
+        // Montador avalia o cliente (1 a 5 estrelas) depois da conclusão
+        [HttpPut("{id}/avaliar-cliente")]
+        public Task<IActionResult> AvaliarCliente(Guid id, [FromBody] AvaliarPedidoRequest request) =>
+            Executar(() => _acoesMontadorUseCase.AvaliarClienteAsync(id, UsuarioId, request.Nota, request.Comentario),
                 "Obrigado pela avaliação!");
 
         // Cliente cancela o pedido (permitido até antes do pagamento)

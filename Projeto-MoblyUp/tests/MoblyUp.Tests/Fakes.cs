@@ -2,6 +2,7 @@ using MoblyUp.Application.Interfaces;
 using MoblyUp.Domain.Entities;
 using MoblyUp.Domain.Enums;
 using MoblyUp.Domain.Interfaces;
+using MoblyUp.Domain.ValueObjects;
 
 namespace MoblyUp.Tests
 {
@@ -43,15 +44,42 @@ namespace MoblyUp.Tests
             return Task.CompletedTask;
         }
 
-        public Task<(double Media, int Total)> ObterResumoAvaliacoesAsync(string montadorId)
-        {
-            var notas = Pedidos.Where(p => p.MontadorId == montadorId && p.AvaliacaoNota.HasValue)
-                .Select(p => p.AvaliacaoNota!.Value).ToList();
-            return Task.FromResult((notas.Count > 0 ? notas.Average() : 0, notas.Count));
-        }
-
         public Task<HashSet<Guid>> ObterIdsRecusadosAsync(string montadorId) =>
             Task.FromResult(Recusas.Where(r => r.MontadorId == montadorId).Select(r => r.PedidoId).ToHashSet());
+
+        // Avaliações recebidas no papel informado (mesma regra do repositório real)
+        private IEnumerable<(string UsuarioId, int Nota, string? Comentario, DateTime Data, string Autor, string Movel)> Notas(TipoPerfil papel) =>
+            papel == TipoPerfil.Montador
+                ? Pedidos.Where(p => p.MontadorId != null && p.NotaMontador.HasValue)
+                    .Select(p => (p.MontadorId!, p.NotaMontador!.Value, p.ComentarioMontador, p.DataAvaliacaoMontador!.Value, p.ClienteId, p.TipoMovel))
+                : Pedidos.Where(p => p.NotaCliente.HasValue)
+                    .Select(p => (p.ClienteId, p.NotaCliente!.Value, p.ComentarioCliente, p.DataAvaliacaoCliente!.Value, p.MontadorId ?? "", p.TipoMovel));
+
+        public Task<IReadOnlyList<AvaliacaoRecebida>> ObterAvaliacoesRecebidasAsync(string usuarioId, TipoPerfil papel) =>
+            Task.FromResult<IReadOnlyList<AvaliacaoRecebida>>(Notas(papel)
+                .Where(n => n.UsuarioId == usuarioId)
+                .OrderByDescending(n => n.Data)
+                .Select(n => new AvaliacaoRecebida(n.Nota, n.Comentario, n.Data, n.Autor, n.Movel))
+                .ToList());
+
+        public Task<Dictionary<string, ResumoReputacao>> ObterResumosReputacaoAsync(IEnumerable<string> usuarioIds, TipoPerfil papel)
+        {
+            var ids = usuarioIds.ToHashSet();
+            return Task.FromResult(Notas(papel)
+                .Where(n => ids.Contains(n.UsuarioId))
+                .GroupBy(n => n.UsuarioId)
+                .ToDictionary(g => g.Key, g => new ResumoReputacao(g.Average(n => n.Nota), g.Count())));
+        }
+
+        public Task<bool> PossuemPedidoEmComumAsync(string a, string b) =>
+            Task.FromResult(Pedidos.Any(p => (p.ClienteId == a && p.MontadorId == b) || (p.ClienteId == b && p.MontadorId == a)));
+
+        public Task<bool> PossuemServicoEmAndamentoAsync(string a, string b) =>
+            Task.FromResult(Pedidos.Any(p => p.Status == StatusPedido.EmAndamento &&
+                ((p.ClienteId == a && p.MontadorId == b) || (p.ClienteId == b && p.MontadorId == a))));
+
+        public Task<bool> ClienteTemPedidoAbertoAsync(string clienteId) =>
+            Task.FromResult(Pedidos.Any(p => p.ClienteId == clienteId && p.Status == StatusPedido.Disponivel));
     }
 
     // Guarda as notificações "enviadas" para os testes conferirem

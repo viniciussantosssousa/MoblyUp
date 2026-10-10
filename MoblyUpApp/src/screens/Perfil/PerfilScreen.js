@@ -14,6 +14,7 @@ import { avisar, confirmar } from '../../services/alerta';
 import { traduzirErro } from '../../services/erros';
 import { formatarData, formatarMoeda } from '../../services/statusPedido';
 import Estrelas, { descreverReputacao } from '../../components/Estrelas';
+import { QuadroReputacao, ListaAvaliacoes } from '../../components/Reputacao';
 
 // (34) 99999-8888
 const formatarTelefone = (valor) => {
@@ -278,19 +279,17 @@ export default function PerfilScreen() {
               <Text style={styles.statsTotalLabel}>{isMontador ? 'Total recebido' : 'Total investido'}</Text>
               <Text style={styles.statsTotalValue}>{formatarMoeda(estatisticas.valorTotal)}</Text>
             </View>
-            {isMontador && (
-              <View style={[styles.statsTotalRow, { marginTop: 10 }]}>
-                <Text style={styles.statsTotalLabel}>Sua reputação</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {estatisticas.totalAvaliacoes > 0 && (
-                    <Estrelas nota={estatisticas.mediaAvaliacao} tamanho={14} style={{ marginRight: 6 }} />
-                  )}
-                  <Text style={styles.statsReputacao}>
-                    {descreverReputacao(estatisticas.mediaAvaliacao, estatisticas.totalAvaliacoes)}
-                  </Text>
-                </View>
+            <View style={[styles.statsTotalRow, { marginTop: 10 }]}>
+              <Text style={styles.statsTotalLabel}>Sua reputação</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {estatisticas.totalAvaliacoes > 0 && (
+                  <Estrelas nota={estatisticas.mediaAvaliacao} tamanho={14} style={{ marginRight: 6 }} />
+                )}
+                <Text style={styles.statsReputacao}>
+                  {descreverReputacao(estatisticas.mediaAvaliacao, estatisticas.totalAvaliacoes)}
+                </Text>
               </View>
-            )}
+            </View>
           </View>
         ) : null}
 
@@ -298,6 +297,31 @@ export default function PerfilScreen() {
           <View style={styles.alertCard}>
             <Ionicons name="alert-circle" size={20} color="#C05621" />
             <Text style={styles.alertText}>Cadastre sua chave Pix para poder enviar propostas e receber os pagamentos.</Text>
+          </View>
+        )}
+
+        {perfil?.reputacao && (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Minha reputação</Text>
+            <QuadroReputacao reputacao={perfil.reputacao} />
+
+            <Text style={[styles.sectionTitle, { marginTop: 20, marginBottom: 4 }]}>
+              Comentários que você recebeu
+            </Text>
+            <ListaAvaliacoes
+              avaliacoes={perfil.reputacao.avaliacoes}
+              vazio={isMontador
+                ? 'Conclua serviços para receber avaliações dos clientes.'
+                : 'Os montadores poderão avaliar você após cada serviço concluído.'}
+            />
+
+            <TouchableOpacity
+              style={styles.verPublicoButton}
+              onPress={() => navigation.navigate('PerfilPublico', { usuarioId: perfil.id })}
+            >
+              <Ionicons name="eye-outline" size={16} color="#3182CE" />
+              <Text style={styles.verPublicoText}>Ver como os outros veem meu perfil</Text>
+            </TouchableOpacity>
           </View>
         )}
 

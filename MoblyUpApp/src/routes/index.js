@@ -25,6 +25,8 @@ import ConcluirServicoScreen from '../screens/ConcluirServico/ConcluirServicoScr
 // Telas Comuns
 import PerfilScreen from '../screens/Perfil/PerfilScreen';
 import CompletarCadastroScreen from '../screens/CompletarCadastro/CompletarCadastroScreen';
+import PerfilPublicoScreen from '../screens/PerfilPublico/PerfilPublicoScreen';
+import AvaliarClienteScreen from '../screens/AvaliarCliente/AvaliarClienteScreen';
 
 const Stack = createNativeStackNavigator();
 const navigationRef = createNavigationContainerRef();
@@ -96,6 +98,7 @@ export default function Routes() {
               <Stack.Screen name="DetalhesPedido" component={DetalhesPedidoScreen} />
               <Stack.Screen name="VerPropostas" component={VerPropostasScreen} />
               <Stack.Screen name="Perfil" component={PerfilScreen} />
+              <Stack.Screen name="PerfilPublico" component={PerfilPublicoScreen} />
             </>
           ) : (
             <>
@@ -103,7 +106,9 @@ export default function Routes() {
               <Stack.Screen name="HistoricoMontador" component={HistoricoMontadorScreen} />
               <Stack.Screen name="EnviarProposta" component={EnviarPropostaScreen} />
               <Stack.Screen name="ConcluirServico" component={ConcluirServicoScreen} />
+              <Stack.Screen name="AvaliarCliente" component={AvaliarClienteScreen} />
               <Stack.Screen name="Perfil" component={PerfilScreen} />
+              <Stack.Screen name="PerfilPublico" component={PerfilPublicoScreen} />
             </>
           )
         )}

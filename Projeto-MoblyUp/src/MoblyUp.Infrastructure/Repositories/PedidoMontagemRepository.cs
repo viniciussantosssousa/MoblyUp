@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using MoblyUp.Domain.Entities;
 using MoblyUp.Domain.Enums;
 using MoblyUp.Domain.Interfaces;
+using MoblyUp.Domain.ValueObjects;
 using MoblyUp.Infrastructure.Data;
 
 namespace MoblyUp.Infrastructure.Repositories
@@ -22,6 +23,7 @@ namespace MoblyUp.Infrastructure.Repositories
         public async Task<PedidoMontagem?> ObterPorIdAsync(Guid id)
         {
             return await _context.PedidosMontagem
+                .Include(p => p.Cliente)
                 .Include(p => p.Montador)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
@@ -41,6 +43,7 @@ namespace MoblyUp.Infrastructure.Repositories
         {
             return await _context.PedidosMontagem
                 .AsNoTracking()
+                .Include(p => p.Cliente)
                 .Where(p => p.MontadorId == montadorId)
                 .ToListAsync();
         }
@@ -49,9 +52,67 @@ namespace MoblyUp.Infrastructure.Repositories
         {
             return await _context.PedidosMontagem
                 .AsNoTracking()
+                .Include(p => p.Cliente)
                 .Where(p => p.Status == status)
                 .ToListAsync();
         }
+
+        public async Task<IReadOnlyList<AvaliacaoRecebida>> ObterAvaliacoesRecebidasAsync(string usuarioId, TipoPerfil papel)
+        {
+            var consulta = _context.PedidosMontagem.AsNoTracking();
+
+            var avaliacoes = papel == TipoPerfil.Montador
+                // Montador recebe a nota que o cliente deu
+                ? await consulta
+                    .Where(p => p.MontadorId == usuarioId && p.NotaMontador != null)
+                    .Select(p => new AvaliacaoRecebida(p.NotaMontador!.Value, p.ComentarioMontador,
+                        p.DataAvaliacaoMontador!.Value, p.Cliente.Nome, p.TipoMovel))
+                    .ToListAsync()
+                // Cliente recebe a nota que o montador deu
+                : await consulta
+                    .Where(p => p.ClienteId == usuarioId && p.NotaCliente != null)
+                    .Select(p => new AvaliacaoRecebida(p.NotaCliente!.Value, p.ComentarioCliente,
+                        p.DataAvaliacaoCliente!.Value, p.Montador!.Nome, p.TipoMovel))
+                    .ToListAsync();
+
+            return avaliacoes.OrderByDescending(a => a.Data).ToList();
+        }
+
+        public async Task<Dictionary<string, ResumoReputacao>> ObterResumosReputacaoAsync(IEnumerable<string> usuarioIds, TipoPerfil papel)
+        {
+            var ids = usuarioIds.Distinct().ToList();
+            if (ids.Count == 0)
+                return new Dictionary<string, ResumoReputacao>();
+
+            // Uma única consulta agrupada no SQL Server para todos os usuários da lista
+            var resumos = papel == TipoPerfil.Montador
+                ? await _context.PedidosMontagem
+                    .Where(p => p.MontadorId != null && ids.Contains(p.MontadorId) && p.NotaMontador != null)
+                    .GroupBy(p => p.MontadorId!)
+                    .Select(g => new { Id = g.Key, Media = g.Average(p => (double)p.NotaMontador!.Value), Total = g.Count() })
+                    .ToListAsync()
+                : await _context.PedidosMontagem
+                    .Where(p => ids.Contains(p.ClienteId) && p.NotaCliente != null)
+                    .GroupBy(p => p.ClienteId)
+                    .Select(g => new { Id = g.Key, Media = g.Average(p => (double)p.NotaCliente!.Value), Total = g.Count() })
+                    .ToListAsync();
+
+            return resumos.ToDictionary(r => r.Id, r => new ResumoReputacao(r.Media, r.Total));
+        }
+
+        public Task<bool> PossuemPedidoEmComumAsync(string usuarioA, string usuarioB) =>
+            _context.PedidosMontagem.AnyAsync(p =>
+                (p.ClienteId == usuarioA && p.MontadorId == usuarioB) ||
+                (p.ClienteId == usuarioB && p.MontadorId == usuarioA));
+
+        public Task<bool> PossuemServicoEmAndamentoAsync(string usuarioA, string usuarioB) =>
+            _context.PedidosMontagem.AnyAsync(p =>
+                p.Status == StatusPedido.EmAndamento &&
+                ((p.ClienteId == usuarioA && p.MontadorId == usuarioB) ||
+                 (p.ClienteId == usuarioB && p.MontadorId == usuarioA)));
+
+        public Task<bool> ClienteTemPedidoAbertoAsync(string clienteId) =>
+            _context.PedidosMontagem.AnyAsync(p => p.ClienteId == clienteId && p.Status == StatusPedido.Disponivel);
 
         public async Task RegistrarRecusaAsync(Guid pedidoId, string montadorId)
         {
@@ -62,18 +123,6 @@ namespace MoblyUp.Infrastructure.Repositories
 
             await _context.PedidosRecusados.AddAsync(new PedidoRecusado(pedidoId, montadorId));
             await _context.SaveChangesAsync();
-        }
-
-        public async Task<(double Media, int Total)> ObterResumoAvaliacoesAsync(string montadorId)
-        {
-            // Agregação feita no SQL Server: não carrega os pedidos na memória
-            var notas = _context.PedidosMontagem
-                .Where(p => p.MontadorId == montadorId && p.AvaliacaoNota != null)
-                .Select(p => p.AvaliacaoNota!.Value);
-
-            var total = await notas.CountAsync();
-            var media = total == 0 ? 0 : await notas.AverageAsync();
-            return (media, total);
         }
 
         public async Task<HashSet<Guid>> ObterIdsRecusadosAsync(string montadorId)
@@ -93,7 +142,11 @@ namespace MoblyUp.Infrastructure.Repositories
 
         public async Task AtualizarAsync(PedidoMontagem pedido)
         {
-            _context.PedidosMontagem.Update(pedido);
+            // Pedido carregado por este contexto já é rastreado: o EF grava só o que mudou.
+            // Update() marcaria o grafo inteiro (cliente e montador) como alterado.
+            if (_context.Entry(pedido).State == EntityState.Detached)
+                _context.PedidosMontagem.Update(pedido);
+
             await _context.SaveChangesAsync();
         }
     }

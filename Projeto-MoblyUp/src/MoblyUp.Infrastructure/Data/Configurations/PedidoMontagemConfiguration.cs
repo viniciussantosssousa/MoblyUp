@@ -46,7 +46,11 @@ namespace MoblyUp.Infrastructure.Data.Configurations
             // O feed dos montadores filtra por status a cada abertura da tela
             builder.HasIndex(p => p.Status);
 
-            builder.Property(p => p.AvaliacaoComentario)
+            builder.Property(p => p.ComentarioMontador)
+                .HasMaxLength(500)
+                .IsRequired(false);
+
+            builder.Property(p => p.ComentarioCliente)
                 .HasMaxLength(500)
                 .IsRequired(false);
 

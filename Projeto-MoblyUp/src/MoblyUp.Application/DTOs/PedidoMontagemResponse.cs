@@ -8,6 +8,7 @@ namespace MoblyUp.Application.DTOs
     {
         public Guid Id { get; set; }
         public string ClienteId { get; set; } = string.Empty;
+        public string? NomeCliente { get; set; }
         public string? MontadorId { get; set; }
         public string? NomeMontador { get; set; }
 
@@ -28,12 +29,17 @@ namespace MoblyUp.Application.DTOs
         public DateTime? DataConclusao { get; set; }
         public string? FotoConclusaoUrl { get; set; }
 
-        public int? AvaliacaoNota { get; set; }
-        public string? AvaliacaoComentario { get; set; }
+        // Avaliações deste serviço: a que o montador recebeu (do cliente) e a que o cliente recebeu (do montador)
+        public int? NotaMontador { get; set; }
+        public string? ComentarioMontador { get; set; }
+        public int? NotaCliente { get; set; }
+        public string? ComentarioCliente { get; set; }
 
-        // Reputação do montador (preenchida no detalhe do pedido, para o cliente decidir a proposta)
+        // Reputação geral de cada parte, para um decidir se faz negócio com o outro
         public double? MediaAvaliacaoMontador { get; set; }
         public int TotalAvaliacoesMontador { get; set; }
+        public double? MediaAvaliacaoCliente { get; set; }
+        public int TotalAvaliacoesCliente { get; set; }
 
         public static PedidoMontagemResponse DeEntidade(PedidoMontagem pedido)
         {
@@ -41,6 +47,7 @@ namespace MoblyUp.Application.DTOs
             {
                 Id = pedido.Id,
                 ClienteId = pedido.ClienteId,
+                NomeCliente = pedido.Cliente == null ? null : ReputacaoResponse.PrimeiroNome(pedido.Cliente.Nome),
                 MontadorId = pedido.MontadorId,
                 NomeMontador = pedido.Montador?.Nome,
                 TipoMovel = pedido.TipoMovel,
@@ -56,8 +63,10 @@ namespace MoblyUp.Application.DTOs
                 DataAceite = pedido.DataAceite,
                 DataConclusao = pedido.DataConclusao,
                 FotoConclusaoUrl = pedido.FotoConclusaoUrl,
-                AvaliacaoNota = pedido.AvaliacaoNota,
-                AvaliacaoComentario = pedido.AvaliacaoComentario
+                NotaMontador = pedido.NotaMontador,
+                ComentarioMontador = pedido.ComentarioMontador,
+                NotaCliente = pedido.NotaCliente,
+                ComentarioCliente = pedido.ComentarioCliente
             };
         }
 

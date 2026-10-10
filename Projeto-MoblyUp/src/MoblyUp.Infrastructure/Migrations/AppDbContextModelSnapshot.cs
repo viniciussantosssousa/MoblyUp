@@ -47,21 +47,25 @@ namespace MoblyUp.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("AvaliacaoComentario")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int?>("AvaliacaoNota")
-                        .HasColumnType("int");
-
                     b.Property<string>("ClienteId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("ComentarioCliente")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ComentarioMontador")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateTime?>("DataAceite")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DataAvaliacao")
+                    b.Property<DateTime?>("DataAvaliacaoCliente")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DataAvaliacaoMontador")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DataConclusao")
@@ -80,6 +84,12 @@ namespace MoblyUp.Infrastructure.Migrations
 
                     b.Property<string>("MontadorId")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("NotaCliente")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("NotaMontador")
+                        .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");

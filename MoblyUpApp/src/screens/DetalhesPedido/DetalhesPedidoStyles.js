@@ -70,6 +70,21 @@ export const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
   },
+  pessoaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pessoaNome: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 2,
+  },
+  pessoaDica: {
+    fontSize: 12,
+    color: '#3182CE',
+    marginTop: 10,
+  },
   estrelasSeletor: {
     justifyContent: 'center',
     marginBottom: 16,

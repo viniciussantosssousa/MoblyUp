@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using MoblyUp.Domain.Entities;
 using MoblyUp.Domain.Enums;
+using MoblyUp.Domain.ValueObjects;
 
 namespace MoblyUp.Domain.Interfaces
 {
@@ -19,7 +20,13 @@ namespace MoblyUp.Domain.Interfaces
         Task RegistrarRecusaAsync(Guid pedidoId, string montadorId);
         Task<HashSet<Guid>> ObterIdsRecusadosAsync(string montadorId);
 
-        // Média das notas recebidas pelo montador e quantas avaliações ele tem
-        Task<(double Media, int Total)> ObterResumoAvaliacoesAsync(string montadorId);
+        // Reputação: avaliações RECEBIDAS pelo usuário no papel informado (cliente ou montador)
+        Task<IReadOnlyList<AvaliacaoRecebida>> ObterAvaliacoesRecebidasAsync(string usuarioId, TipoPerfil papel);
+        Task<Dictionary<string, ResumoReputacao>> ObterResumosReputacaoAsync(IEnumerable<string> usuarioIds, TipoPerfil papel);
+
+        // Relações entre usuários (controlam quem pode ver o perfil e o contato de quem)
+        Task<bool> PossuemPedidoEmComumAsync(string usuarioA, string usuarioB);
+        Task<bool> PossuemServicoEmAndamentoAsync(string usuarioA, string usuarioB);
+        Task<bool> ClienteTemPedidoAbertoAsync(string clienteId);
     }
 }

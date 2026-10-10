@@ -8,6 +8,7 @@ import api, { mensagemDeErro } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarData, formatarMoeda } from '../../services/statusPedido';
 import Estrelas from '../../components/Estrelas';
+import { ResumoReputacao } from '../../components/Reputacao';
 
 // Texto e ícone exibidos para cada etapa da jornada do serviço
 const ETAPAS = {
@@ -68,7 +69,7 @@ export default function DetalhesPedidoScreen() {
   const handleAvaliar = async () => {
     try {
       setProcessando(true);
-      await api.put(`/pedidos/${pedidoId}/avaliar`, { nota, comentario: comentario.trim() || null });
+      await api.put(`/pedidos/${pedidoId}/avaliar-montador`, { nota, comentario: comentario.trim() || null });
       avisar('Obrigado!', 'Sua avaliação ajuda outros clientes a escolherem um bom montador.');
       await carregarPedido();
     } catch (error) {
@@ -145,14 +146,47 @@ export default function DetalhesPedidoScreen() {
           )}
         </View>
 
+        {pedidoData.montadorId ? (
+          <TouchableOpacity
+            style={styles.sectionCard}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('PerfilPublico', { usuarioId: pedidoData.montadorId })}
+          >
+            <Text style={styles.sectionTitle}>Montador</Text>
+            <View style={styles.pessoaRow}>
+              <Ionicons name="person-circle-outline" size={40} color={colors.primary} />
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={styles.pessoaNome}>{pedidoData.nomeMontador}</Text>
+                <ResumoReputacao media={pedidoData.mediaAvaliacaoMontador} total={pedidoData.totalAvaliacoesMontador} />
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#A0AEC0" />
+            </View>
+            <Text style={styles.pessoaDica}>
+              {status === STATUS_PEDIDO.EM_ANDAMENTO
+                ? 'Toque para ver o telefone e o WhatsApp do montador'
+                : 'Toque para ver o perfil e as avaliações'}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {concluido && pedidoData.notaCliente ? (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Avaliação que você recebeu</Text>
+            <Estrelas nota={pedidoData.notaCliente} tamanho={20} />
+            {pedidoData.comentarioCliente ? (
+              <Text style={styles.avaliacaoComentario}>"{pedidoData.comentarioCliente}"</Text>
+            ) : null}
+          </View>
+        ) : null}
+
         {concluido && (
           <View style={styles.sectionCard}>
-            {pedidoData.avaliacaoNota ? (
+            {pedidoData.notaMontador ? (
               <>
-                <Text style={styles.sectionTitle}>Sua avaliação</Text>
-                <Estrelas nota={pedidoData.avaliacaoNota} tamanho={24} />
-                {pedidoData.avaliacaoComentario ? (
-                  <Text style={styles.avaliacaoComentario}>"{pedidoData.avaliacaoComentario}"</Text>
+                <Text style={styles.sectionTitle}>Sua avaliação do montador</Text>
+                <Estrelas nota={pedidoData.notaMontador} tamanho={24} />
+                {pedidoData.comentarioMontador ? (
+                  <Text style={styles.avaliacaoComentario}>"{pedidoData.comentarioMontador}"</Text>
                 ) : null}
               </>
             ) : (
@@ -201,12 +235,6 @@ export default function DetalhesPedidoScreen() {
             <Text style={styles.infoLabel}>Endereço</Text>
             <Text style={styles.infoValue}>{pedidoData.enderecoServico}</Text>
           </View>
-          {pedidoData.nomeMontador ? (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Montador</Text>
-              <Text style={styles.infoValue}>{pedidoData.nomeMontador}</Text>
-            </View>
-          ) : null}
           {pedidoData.urlFotoMovelTemporaria ? (
             <Image source={{ uri: pedidoData.urlFotoMovelTemporaria }} style={styles.foto} />
           ) : null}

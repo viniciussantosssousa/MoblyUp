@@ -6,6 +6,7 @@ import { styles } from './EnviarPropostaStyles';
 import { colors } from '../../theme/colors';
 import api, { mensagemDeErro } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
+import { ResumoReputacao } from '../../components/Reputacao';
 
 // Aceita "150", "150,50" e "1.250,00"
 const converterValor = (texto) => {
@@ -118,6 +119,21 @@ export default function EnviarPropostaScreen() {
             <Text style={styles.noImageText}>O cliente não enviou foto deste móvel.</Text>
           )}
         </View>
+
+        <Text style={styles.sectionTitle}>Sobre o Cliente</Text>
+        <TouchableOpacity
+          style={styles.clienteCard}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('PerfilPublico', { usuarioId: pedido.clienteId })}
+        >
+          <Ionicons name="person-circle-outline" size={36} color={colors.primary} />
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={styles.clienteNome}>{pedido.nomeCliente || 'Cliente'}</Text>
+            <ResumoReputacao media={pedido.mediaAvaliacaoCliente} total={pedido.totalAvaliacoesCliente} />
+          </View>
+          <Text style={styles.clienteLink}>Ver avaliações</Text>
+          <Ionicons name="chevron-forward" size={18} color="#3182CE" />
+        </TouchableOpacity>
 
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Valor Cobrado do Cliente (PIX)</Text>

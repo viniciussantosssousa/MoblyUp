@@ -75,6 +75,28 @@ export const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: 12,
   },
+  clienteCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  clienteNome: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 2,
+  },
+  clienteLink: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#3182CE',
+    marginRight: 2,
+  },
   inputContainer: {
     marginBottom: 24,
   },

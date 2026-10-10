@@ -7,6 +7,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { STATUS_PEDIDO, isConcluido, formatarData } from '../../services/statusPedido';
 import Estrelas from '../../components/Estrelas';
+import { ResumoReputacao } from '../../components/Reputacao';
 
 export default function HistoricoMontadorScreen() {
   const navigation = useNavigation();
@@ -62,34 +63,63 @@ export default function HistoricoMontadorScreen() {
           {pedidos.map((pedido) => {
             const concluido = isConcluido(pedido);
             const emAndamento = pedido.status === STATUS_PEDIDO.EM_ANDAMENTO;
+            // Só o serviço em andamento abre a conclusão; nos outros o cartão é estático
+            // (um Touchable desativado poderia bloquear os botões de dentro)
+            const Cartao = emAndamento ? TouchableOpacity : View;
             return (
-              <TouchableOpacity
+              <Cartao
                 key={pedido.id}
                 style={styles.card}
-                activeOpacity={emAndamento ? 0.7 : 1}
-                disabled={!emAndamento}
-                onPress={() => navigation.navigate('ConcluirServico', { pedido })}
+                {...(emAndamento ? { activeOpacity: 0.7, onPress: () => navigation.navigate('ConcluirServico', { pedido }) } : {})}
               >
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>{pedido.tipoMovel}</Text>
                   <Text style={styles.cardDate}>{formatarData(pedido.dataConclusao || pedido.dataCriacao)}</Text>
                 </View>
                 <Text style={styles.cardAddress}>{pedido.enderecoServico}</Text>
+                <ResumoReputacao
+                  style={styles.cliente}
+                  media={pedido.mediaAvaliacaoCliente}
+                  total={pedido.totalAvaliacoesCliente}
+                  rotuloLink={`Cliente: ${pedido.nomeCliente || ''}`}
+                  onPress={() => navigation.navigate('PerfilPublico', { usuarioId: pedido.clienteId })}
+                />
                 <View style={styles.cardFooter}>
                   <Text style={[styles.status, concluido ? styles.statusDone : styles.statusPending]}>
                     {pedido.statusDescricao}
                   </Text>
                   <Text style={styles.valor}>{formatarMoeda(pedido.valorMontador)}</Text>
                 </View>
-                {pedido.avaliacaoNota ? (
+
+                {concluido && (
                   <View style={styles.avaliacao}>
-                    <Estrelas nota={pedido.avaliacaoNota} tamanho={14} />
-                    {pedido.avaliacaoComentario ? (
-                      <Text style={styles.avaliacaoComentario}>"{pedido.avaliacaoComentario}"</Text>
-                    ) : null}
+                    <Text style={styles.avaliacaoTitulo}>Avaliação que você recebeu</Text>
+                    {pedido.notaMontador ? (
+                      <>
+                        <Estrelas nota={pedido.notaMontador} tamanho={14} />
+                        {pedido.comentarioMontador ? (
+                          <Text style={styles.avaliacaoComentario}>"{pedido.comentarioMontador}"</Text>
+                        ) : null}
+                      </>
+                    ) : (
+                      <Text style={styles.avaliacaoPendente}>O cliente ainda não avaliou.</Text>
+                    )}
+
+                    <Text style={[styles.avaliacaoTitulo, { marginTop: 10 }]}>Sua avaliação do cliente</Text>
+                    {pedido.notaCliente ? (
+                      <Estrelas nota={pedido.notaCliente} tamanho={14} />
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.avaliarBotao}
+                        onPress={() => navigation.navigate('AvaliarCliente', { pedido })}
+                      >
+                        <Ionicons name="star-outline" size={16} color={colors.white} />
+                        <Text style={styles.avaliarBotaoTexto}>Avaliar cliente</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
-                ) : null}
-              </TouchableOpacity>
+                )}
+              </Cartao>
             );
           })}
         </ScrollView>
@@ -118,4 +148,12 @@ const styles = StyleSheet.create({
   valor: { fontSize: 15, fontWeight: 'bold', color: colors.primary },
   avaliacao: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border },
   avaliacaoComentario: { fontSize: 13, color: '#4A5568', fontStyle: 'italic', marginTop: 4 },
+  avaliacaoTitulo: { fontSize: 12, fontWeight: 'bold', color: '#718096', marginBottom: 4 },
+  avaliacaoPendente: { fontSize: 13, color: '#A0AEC0', fontStyle: 'italic' },
+  avaliarBotao: {
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
+    backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 14,
+  },
+  avaliarBotaoTexto: { color: colors.white, fontWeight: 'bold', marginLeft: 6 },
+  cliente: { marginBottom: 10 },
 });

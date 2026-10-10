@@ -82,6 +82,7 @@ builder.Services.AddScoped<ConcluirPedidoUseCase>();
 builder.Services.AddScoped<ConsultarPedidosUseCase>();
 builder.Services.AddScoped<ResponderPropostaUseCase>();
 builder.Services.AddScoped<AcoesMontadorUseCase>();
+builder.Services.AddScoped<PerfilPublicoUseCase>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
