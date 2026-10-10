@@ -11,6 +11,7 @@ import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
 import { ResumoReputacao } from '../../components/Reputacao';
 import { encontrarAvaliacaoPendente, adiarAvaliacao } from '../../services/avaliacoesPendentes';
 import ModalAvaliacao from '../../components/ModalAvaliacao';
+import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
 
 // Serviços do montador que ainda exigem acompanhamento
 const STATUS_ATIVOS = [
@@ -52,6 +53,8 @@ export default function HomeMontadorScreen() {
   }, [user?.id, user?.regiao]);
 
   useFocusEffect(useCallback(() => { carregar(); }, [carregar]));
+  // Pedidos novos da região e respostas dos clientes aparecem sem precisar atualizar a tela
+  useAtualizacaoAoVivo(carregar);
 
   const handleAtualizar = () => {
     setAtualizando(true);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import api from '../../services/api';
 import { STATUS_PEDIDO, isConcluido, formatarData } from '../../services/statusPedido';
 import Estrelas from '../../components/Estrelas';
 import { ResumoReputacao } from '../../components/Reputacao';
+import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
 
 export default function HistoricoMontadorScreen() {
   const navigation = useNavigation();
@@ -17,24 +18,26 @@ export default function HistoricoMontadorScreen() {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchHistorico = async () => {
-      try {
-        setLoading(true);
-        // Todos os pedidos em que este montador enviou proposta ou trabalhou
-        const response = await api.get('/pedidos/montador');
-        setPedidos(response.data);
-      } catch (error) {
-        console.log('Erro ao buscar histórico do montador:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchHistorico = useCallback(async () => {
+    try {
+      // Todos os pedidos em que este montador enviou proposta ou trabalhou
+      const response = await api.get('/pedidos/montador');
+      setPedidos(response.data);
+    } catch (error) {
+      console.log('Erro ao buscar histórico do montador:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
+  useEffect(() => {
     if (isFocused && user?.id) {
       fetchHistorico();
     }
-  }, [isFocused, user?.id]);
+  }, [isFocused, user?.id, fetchHistorico]);
+
+  // Avaliações recebidas e mudanças nos serviços aparecem sem atualizar a tela
+  useAtualizacaoAoVivo(fetchHistorico);
 
   const formatarMoeda = (valor) => {
     if (!valor) return '';

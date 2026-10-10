@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using MoblyUp.API.Autenticacao;
+using MoblyUp.API.TempoReal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MoblyUp.Domain.Interfaces;
@@ -45,7 +46,7 @@ if (loginDeTesteHabilitado)
         // Com o cabeçalho X-Usuario-Teste usa o login de teste; sem ele, o token do Firebase normalmente
         .AddPolicyScheme(EsquemaPadrao, EsquemaPadrao, options =>
             options.ForwardDefaultSelector = context =>
-                context.Request.Headers.ContainsKey(LoginDeTeste.Cabecalho)
+                LoginDeTeste.ObterUsuario(context.Request) != null
                     ? LoginDeTeste.Esquema
                     : JwtBearerDefaults.AuthenticationScheme);
 }
@@ -63,8 +64,25 @@ autenticacao
             ValidAudience = firebaseProjectId,
             ValidateLifetime = true,
         };
+
+        // Tempo real: o WebSocket do navegador não envia cabeçalhos, então na rota do hub
+        // o SignalR manda o token na URL (?access_token=...). Só é aceito em /hubs.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                    context.Token = token;
+                return Task.CompletedTask;
+            },
+        };
     });
 builder.Services.AddAuthorization();
+
+// Tempo real (SignalR): telas atualizam sozinhas quando um pedido muda
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<ITempoReal, SignalRTempoReal>();
 
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
@@ -116,5 +134,6 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<PedidosHub>("/hubs/pedidos");
 
 app.Run();

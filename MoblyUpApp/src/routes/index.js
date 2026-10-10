@@ -5,6 +5,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Notifications from 'expo-notifications';
 
 import { AuthContext } from '../contexts/AuthContext';
+import { conectarTempoReal, desconectarTempoReal } from '../services/tempoReal';
+import AvisoTopo from '../components/AvisoTopo';
 
 // Telas Deslogadas
 import LoginScreen from '../screens/Login/LoginScreen';
@@ -57,6 +59,14 @@ export default function Routes() {
   // Conta antiga sem CPF: só libera o app depois de completar o cadastro.
   // "undefined" (API ainda não respondeu) não bloqueia; só o "false" confirmado pela API.
   const cpfPendente = signed && user?.cpfCadastrado === false;
+
+  // Tempo real: conecta enquanto o usuário estiver logado. Reconecta se a região mudar
+  // (o montador passa a receber os pedidos da nova cidade).
+  useEffect(() => {
+    if (!signed || !user?.id || cpfPendente) return undefined;
+    conectarTempoReal();
+    return () => { desconectarTempoReal(); };
+  }, [signed, user?.id, user?.regiao, cpfPendente]);
 
   // Abre a tela certa assim que o usuário estiver logado e a navegação pronta
   useEffect(() => {
@@ -114,6 +124,11 @@ export default function Routes() {
         )}
 
       </Stack.Navigator>
+
+      {/* Avisos em tempo real; tocar abre o pedido como na notificação push */}
+      {signed && !cpfPendente && (
+        <AvisoTopo onAbrir={(aviso) => aviso?.pedidoId && setPedidoDaNotificacao(aviso.pedidoId)} />
+      )}
     </NavigationContainer>
   );
 }

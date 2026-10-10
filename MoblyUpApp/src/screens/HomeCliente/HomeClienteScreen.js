@@ -9,6 +9,7 @@ import api from '../../services/api'; // <-- Importando o Axios
 import { STATUS_PEDIDO, isConcluido, formatarData } from '../../services/statusPedido';
 import { encontrarAvaliacaoPendente, adiarAvaliacao } from '../../services/avaliacoesPendentes';
 import ModalAvaliacao from '../../components/ModalAvaliacao';
+import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
 
 // Quantos pedidos aparecem antes de tocar em "Ver todos"
 const LIMITE_RECENTES = 5;
@@ -40,6 +41,8 @@ export default function HomeClienteScreen() {
   }, [user?.id]);
 
   useFocusEffect(useCallback(() => { carregar(); }, [carregar]));
+  // Proposta recebida, serviço concluído etc. aparecem sem precisar atualizar a tela
+  useAtualizacaoAoVivo(carregar);
 
   const handleAtualizar = () => {
     setAtualizando(true);

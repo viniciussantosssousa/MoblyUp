@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -7,6 +7,9 @@ import { colors } from '../../theme/colors';
 import api, { mensagemDeErro } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
 import { ResumoReputacao } from '../../components/Reputacao';
+import { AuthContext } from '../../contexts/AuthContext';
+import { STATUS_PEDIDO } from '../../services/statusPedido';
+import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
 
 // Aceita "150", "150,50" e "1.250,00"
 const converterValor = (texto) => {
@@ -19,8 +22,25 @@ export default function EnviarPropostaScreen() {
   const route = useRoute();
 
   const pedido = route.params?.pedido || {};
+  const { user } = useContext(AuthContext);
   const [valorProposta, setValorProposta] = useState('');
   const [enviando, setEnviando] = useState(false);
+
+  // Se outro montador fechar o pedido (ou o cliente cancelar) enquanto esta tela está aberta,
+  // avisa na hora em vez de deixar o montador descobrir só ao enviar
+  useAtualizacaoAoVivo(async () => {
+    try {
+      const { data } = await api.get(`/pedidos/${pedido.id}`);
+      const aindaAberto = data.status === STATUS_PEDIDO.DISPONIVEL || data.montadorId === user?.id;
+      if (!aindaAberto) {
+        avisar('Pedido indisponível', 'Este pedido acabou de ser fechado com outro montador ou cancelado pelo cliente.');
+        navigation.goBack();
+      }
+    } catch {
+      // Sem acesso ao pedido = ele não está mais aberto para propostas
+      navigation.goBack();
+    }
+  }, pedido.id);
 
   // Apenas uma prévia: o valor oficial da taxa (15%) é calculado no back-end
   const valorNumerico = Math.round(converterValor(valorProposta) * 100) / 100;

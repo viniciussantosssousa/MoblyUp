@@ -20,6 +20,7 @@ let usuarioDeTeste = null;
 export const definirUsuarioDeTeste = (id) => {
   usuarioDeTeste = id;
 };
+export const obterUsuarioDeTeste = () => usuarioDeTeste;
 
 // A API identifica o usuário pelo ID token do Firebase. O getIdToken renova
 // o token automaticamente quando ele expira (a cada 1 hora).

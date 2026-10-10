@@ -15,6 +15,19 @@ namespace MoblyUp.API.Autenticacao
     {
         public const string Esquema = "LoginDeTeste";
         public const string Cabecalho = "X-Usuario-Teste";
+        public const string ParametroHub = "usuario_teste";
+
+        // Pelo cabeçalho; ou, só na conexão de tempo real (o WebSocket do navegador
+        // não envia cabeçalhos), pelo parâmetro ?usuario_teste= da URL
+        public static string? ObterUsuario(HttpRequest request)
+        {
+            var cabecalho = request.Headers[Cabecalho].ToString();
+            if (!string.IsNullOrEmpty(cabecalho))
+                return cabecalho;
+
+            var parametro = request.Query[ParametroHub].ToString();
+            return request.Path.StartsWithSegments("/hubs") && !string.IsNullOrEmpty(parametro) ? parametro : null;
+        }
 
         public static readonly UsuarioDeTeste[] Usuarios =
         {
@@ -58,7 +71,7 @@ namespace MoblyUp.API.Autenticacao
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            var id = Request.Headers[LoginDeTeste.Cabecalho].ToString();
+            var id = LoginDeTeste.ObterUsuario(Request);
             var usuario = LoginDeTeste.Usuarios.FirstOrDefault(u => u.Id == id);
             if (usuario == null)
                 return Task.FromResult(AuthenticateResult.Fail("Usuário de teste desconhecido."));

@@ -8,6 +8,7 @@ import api, { mensagemDeErro } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
 import { ResumoReputacao } from '../../components/Reputacao';
+import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
 
 export default function VerPropostasScreen() {
   const navigation = useNavigation();
@@ -19,9 +20,9 @@ export default function VerPropostasScreen() {
   const [loading, setLoading] = useState(true);
   const [processando, setProcessando] = useState(false);
 
+  // O indicador de carregamento só aparece na primeira vez (as atualizações ao vivo são discretas)
   const carregarPedido = useCallback(async () => {
     try {
-      setLoading(true);
       const response = await api.get(`/pedidos/${pedidoId}`);
       setPedido(response.data);
 
@@ -39,6 +40,9 @@ export default function VerPropostasScreen() {
   useEffect(() => {
     if (pedidoId) carregarPedido();
   }, [pedidoId, carregarPedido]);
+
+  // A proposta aparece aqui no instante em que o montador envia (sem tocar em "Atualizar")
+  useAtualizacaoAoVivo(carregarPedido, pedidoId);
 
   const handleAceitar = async () => {
     const ok = await confirmar(

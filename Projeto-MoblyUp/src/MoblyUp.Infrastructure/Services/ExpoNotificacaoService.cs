@@ -4,11 +4,14 @@ using Microsoft.Extensions.Logging;
 using MoblyUp.Application.Interfaces;
 using MoblyUp.Domain.Entities;
 using MoblyUp.Domain.Interfaces;
+using MoblyUp.Domain.ValueObjects;
 
 namespace MoblyUp.Infrastructure.Services
 {
-    // Envia as notificações pelo serviço gratuito do Expo (https://exp.host/--/api/v2/push/send),
-    // que repassa para o Firebase Cloud Messaging (Android) e para o APNs (iOS).
+    // Cada notificação sai por dois canais:
+    // - Push pelo serviço gratuito do Expo (https://exp.host/--/api/v2/push/send), que repassa para o
+    //   Firebase Cloud Messaging (Android) e para o APNs (iOS): chega mesmo com o app fechado.
+    // - Tempo real (SignalR): aviso na tela para quem está com o app aberto (inclusive no navegador).
     public class ExpoNotificacaoService : INotificacaoService
     {
         private const string UrlExpoPush = "https://exp.host/--/api/v2/push/send";
@@ -16,12 +19,14 @@ namespace MoblyUp.Infrastructure.Services
 
         private readonly HttpClient _httpClient;
         private readonly IUsuarioRepository _usuarioRepository;
+        private readonly ITempoReal _tempoReal;
         private readonly ILogger<ExpoNotificacaoService> _logger;
 
-        public ExpoNotificacaoService(HttpClient httpClient, IUsuarioRepository usuarioRepository, ILogger<ExpoNotificacaoService> logger)
+        public ExpoNotificacaoService(HttpClient httpClient, IUsuarioRepository usuarioRepository, ITempoReal tempoReal, ILogger<ExpoNotificacaoService> logger)
         {
             _httpClient = httpClient;
             _usuarioRepository = usuarioRepository;
+            _tempoReal = tempoReal;
             _logger = logger;
         }
 
@@ -29,6 +34,8 @@ namespace MoblyUp.Infrastructure.Services
         {
             if (string.IsNullOrEmpty(usuarioId))
                 return;
+
+            await AvisarNaTelaAsync(() => _tempoReal.AvisarUsuarioAsync(usuarioId, titulo, mensagem, pedidoId));
 
             var usuario = await _usuarioRepository.ObterPorIdAsync(usuarioId);
             if (usuario?.ExpoPushToken == null)
@@ -39,12 +46,28 @@ namespace MoblyUp.Infrastructure.Services
 
         public async Task NotificarMontadoresDaRegiaoAsync(string enderecoServico, string titulo, string mensagem, Guid pedidoId)
         {
+            var regiao = Regiao.DeEndereco(enderecoServico);
+            if (regiao != null)
+                await AvisarNaTelaAsync(() => _tempoReal.AvisarRegiaoAsync(regiao, titulo, mensagem, pedidoId));
+
             var montadores = await _usuarioRepository.ObterMontadoresComPushAsync();
             var daRegiao = montadores
                 .Where(m => m.Regiao != null && enderecoServico.EndsWith(m.Regiao, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             await EnviarAsync(daRegiao, titulo, mensagem, pedidoId);
+        }
+
+        private async Task AvisarNaTelaAsync(Func<Task> aviso)
+        {
+            try
+            {
+                await aviso();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Falha ao enviar aviso em tempo real.");
+            }
         }
 
         private async Task EnviarAsync(IReadOnlyCollection<Usuario> destinatarios, string titulo, string mensagem, Guid pedidoId)

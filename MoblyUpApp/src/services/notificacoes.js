@@ -15,6 +15,9 @@ Notifications.setNotificationHandler({
 
 let tokenAtual = null;
 
+// Push registrado neste aparelho (o sistema já mostra as notificações)
+export const pushAtivo = () => !!tokenAtual;
+
 // Pede permissão, obtém o token do Expo Push e registra na API para o usuário logado.
 // Nunca lança erro: sem notificação o app continua funcionando normalmente.
 export const registrarNotificacoes = async () => {

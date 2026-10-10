@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using MoblyUp.Application.Interfaces;
 using MoblyUp.Domain.Entities;
 using MoblyUp.Domain.Enums;
 using MoblyUp.Domain.Interfaces;
@@ -14,10 +15,12 @@ namespace MoblyUp.Infrastructure.Repositories
     public class PedidoMontagemRepository : IPedidoMontagemRepository
     {
         private readonly AppDbContext _context;
+        private readonly ITempoReal _tempoReal;
 
-        public PedidoMontagemRepository(AppDbContext context)
+        public PedidoMontagemRepository(AppDbContext context, ITempoReal tempoReal)
         {
             _context = context;
+            _tempoReal = tempoReal;
         }
 
         public async Task<PedidoMontagem?> ObterPorIdAsync(Guid id)
@@ -138,16 +141,40 @@ namespace MoblyUp.Infrastructure.Repositories
         {
             await _context.PedidosMontagem.AddAsync(pedido);
             await _context.SaveChangesAsync();
+            await AvisarAlteracaoAsync(pedido, null);
         }
 
         public async Task AtualizarAsync(PedidoMontagem pedido)
         {
             // Pedido carregado por este contexto já é rastreado: o EF grava só o que mudou.
             // Update() marcaria o grafo inteiro (cliente e montador) como alterado.
-            if (_context.Entry(pedido).State == EntityState.Detached)
+            var entrada = _context.Entry(pedido);
+            if (entrada.State == EntityState.Detached)
                 _context.PedidosMontagem.Update(pedido);
 
+            // Quem era o montador antes de salvar: ao recusar/desistir ele sai do pedido,
+            // mas a tela dele também precisa atualizar
+            var montadorAnterior = entrada.Property(p => p.MontadorId).OriginalValue;
+
             await _context.SaveChangesAsync();
+            await AvisarAlteracaoAsync(pedido, montadorAnterior);
+        }
+
+        // Atualiza em tempo real as telas do cliente, do(s) montador(es) e o feed da região.
+        // Falha no aviso nunca desfaz a gravação (o app também recarrega ao abrir a tela).
+        private async Task AvisarAlteracaoAsync(PedidoMontagem pedido, string? montadorAnterior)
+        {
+            try
+            {
+                await _tempoReal.PedidoAlteradoAsync(
+                    pedido.Id,
+                    Regiao.DeEndereco(pedido.EnderecoServico),
+                    new[] { pedido.ClienteId, pedido.MontadorId, montadorAnterior });
+            }
+            catch
+            {
+                // Sem conexão em tempo real o app continua funcionando normalmente
+            }
         }
     }
 }

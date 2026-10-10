@@ -9,6 +9,7 @@ import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarData, formatarMoeda } from '../../services/statusPedido';
 import Estrelas from '../../components/Estrelas';
 import { ResumoReputacao } from '../../components/Reputacao';
+import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
 
 // Texto e ícone exibidos para cada etapa da jornada do serviço
 const ETAPAS = {
@@ -45,6 +46,9 @@ export default function DetalhesPedidoScreen() {
   useEffect(() => {
     if (pedidoId && isFocused) carregarPedido();
   }, [pedidoId, isFocused, carregarPedido]);
+
+  // Proposta nova, conclusão, avaliação recebida... a tela atualiza sozinha
+  useAtualizacaoAoVivo(carregarPedido, pedidoId);
 
   const handleConfirmarPagamento = async () => {
     const ok = await confirmar(
