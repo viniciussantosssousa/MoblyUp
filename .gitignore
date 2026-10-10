@@ -1,0 +1,25 @@
+# .NET build output
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+web-build/
+
+# Env / secrets
+.env
+.env*.local
+*.pem
+*.key
+*.jks
+*.p8
+*.p12
+
+# OS / editor
+.DS_Store
+Thumbs.db
