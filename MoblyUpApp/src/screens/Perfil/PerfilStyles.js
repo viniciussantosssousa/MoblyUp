@@ -138,6 +138,11 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#9AE6B4',
   },
+  statsReputacao: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.white,
+  },
   alertCard: {
     flexDirection: 'row',
     alignItems: 'center',

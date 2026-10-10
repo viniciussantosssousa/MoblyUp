@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
 import { styles } from './DetalhesPedidoStyles';
@@ -7,6 +7,7 @@ import { colors } from '../../theme/colors';
 import api, { mensagemDeErro } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarData, formatarMoeda } from '../../services/statusPedido';
+import Estrelas from '../../components/Estrelas';
 
 // Texto e ícone exibidos para cada etapa da jornada do serviço
 const ETAPAS = {
@@ -28,6 +29,8 @@ export default function DetalhesPedidoScreen() {
   // Mostra o que veio da lista e atualiza com os dados mais recentes da API
   const [pedidoData, setPedidoData] = useState(route.params?.pedido || {});
   const [processando, setProcessando] = useState(false);
+  const [nota, setNota] = useState(0);
+  const [comentario, setComentario] = useState('');
 
   const carregarPedido = useCallback(async () => {
     try {
@@ -57,6 +60,19 @@ export default function DetalhesPedidoScreen() {
       await carregarPedido();
     } catch (error) {
       avisar('Erro', mensagemDeErro(error, 'Não foi possível confirmar o pagamento.'));
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const handleAvaliar = async () => {
+    try {
+      setProcessando(true);
+      await api.put(`/pedidos/${pedidoId}/avaliar`, { nota, comentario: comentario.trim() || null });
+      avisar('Obrigado!', 'Sua avaliação ajuda outros clientes a escolherem um bom montador.');
+      await carregarPedido();
+    } catch (error) {
+      avisar('Erro', mensagemDeErro(error, 'Não foi possível enviar a avaliação.'));
     } finally {
       setProcessando(false);
     }
@@ -128,6 +144,40 @@ export default function DetalhesPedidoScreen() {
             </TouchableOpacity>
           )}
         </View>
+
+        {concluido && (
+          <View style={styles.sectionCard}>
+            {pedidoData.avaliacaoNota ? (
+              <>
+                <Text style={styles.sectionTitle}>Sua avaliação</Text>
+                <Estrelas nota={pedidoData.avaliacaoNota} tamanho={24} />
+                {pedidoData.avaliacaoComentario ? (
+                  <Text style={styles.avaliacaoComentario}>"{pedidoData.avaliacaoComentario}"</Text>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <Text style={styles.sectionTitle}>Como foi o serviço de {pedidoData.nomeMontador}?</Text>
+                <Estrelas nota={nota} tamanho={36} onChange={setNota} style={styles.estrelasSeletor} />
+                <TextInput
+                  style={styles.comentarioInput}
+                  placeholder="Conte como foi a montagem (opcional)"
+                  multiline
+                  maxLength={500}
+                  value={comentario}
+                  onChangeText={setComentario}
+                />
+                <TouchableOpacity
+                  style={[styles.avaliarButton, (!nota || processando) && { opacity: 0.5 }]}
+                  disabled={!nota || processando}
+                  onPress={handleAvaliar}
+                >
+                  <Text style={styles.actionButtonText}>Enviar avaliação</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        )}
 
         {concluido && pedidoData.fotoConclusaoUrl ? (
           <View style={styles.sectionCard}>

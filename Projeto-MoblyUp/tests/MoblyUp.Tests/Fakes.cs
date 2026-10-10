@@ -43,6 +43,13 @@ namespace MoblyUp.Tests
             return Task.CompletedTask;
         }
 
+        public Task<(double Media, int Total)> ObterResumoAvaliacoesAsync(string montadorId)
+        {
+            var notas = Pedidos.Where(p => p.MontadorId == montadorId && p.AvaliacaoNota.HasValue)
+                .Select(p => p.AvaliacaoNota!.Value).ToList();
+            return Task.FromResult((notas.Count > 0 ? notas.Average() : 0, notas.Count));
+        }
+
         public Task<HashSet<Guid>> ObterIdsRecusadosAsync(string montadorId) =>
             Task.FromResult(Recusas.Where(r => r.MontadorId == montadorId).Select(r => r.PedidoId).ToHashSet());
     }

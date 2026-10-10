@@ -6,6 +6,7 @@ import { colors } from '../../theme/colors';
 import { AuthContext } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { STATUS_PEDIDO, isConcluido, formatarData } from '../../services/statusPedido';
+import Estrelas from '../../components/Estrelas';
 
 export default function HistoricoMontadorScreen() {
   const navigation = useNavigation();
@@ -80,6 +81,14 @@ export default function HistoricoMontadorScreen() {
                   </Text>
                   <Text style={styles.valor}>{formatarMoeda(pedido.valorMontador)}</Text>
                 </View>
+                {pedido.avaliacaoNota ? (
+                  <View style={styles.avaliacao}>
+                    <Estrelas nota={pedido.avaliacaoNota} tamanho={14} />
+                    {pedido.avaliacaoComentario ? (
+                      <Text style={styles.avaliacaoComentario}>"{pedido.avaliacaoComentario}"</Text>
+                    ) : null}
+                  </View>
+                ) : null}
               </TouchableOpacity>
             );
           })}
@@ -107,4 +116,6 @@ const styles = StyleSheet.create({
   statusDone: { color: '#38A169' },
   statusPending: { color: '#D69E2E' },
   valor: { fontSize: 15, fontWeight: 'bold', color: colors.primary },
+  avaliacao: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border },
+  avaliacaoComentario: { fontSize: 13, color: '#4A5568', fontStyle: 'italic', marginTop: 4 },
 });

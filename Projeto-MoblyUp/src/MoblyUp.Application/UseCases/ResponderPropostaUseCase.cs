@@ -35,6 +35,12 @@ namespace MoblyUp.Application.UseCases
                 "Pagamento confirmado! ✅",
                 pedido => $"Você está liberado para montar o {pedido.TipoMovel} em {pedido.EnderecoServico}.");
 
+        // Cliente avalia o montador depois da conclusão (uma única vez)
+        public Task AvaliarAsync(Guid pedidoId, string clienteId, int nota, string? comentario) =>
+            ExecutarAsync(pedidoId, clienteId, pedido => pedido.Avaliar(nota, comentario),
+                "Você recebeu uma avaliação ⭐",
+                pedido => $"O cliente deu {nota} {(nota == 1 ? "estrela" : "estrelas")} pela montagem do {pedido.TipoMovel}.");
+
         // Cliente cancela o pedido antes do pagamento; o montador com proposta (se houver) é avisado
         public Task CancelarAsync(Guid pedidoId, string clienteId) =>
             ExecutarAsync(pedidoId, clienteId, pedido => pedido.Cancelar(),

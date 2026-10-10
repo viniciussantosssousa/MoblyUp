@@ -52,5 +52,7 @@ namespace MoblyUp.Application.DTOs
         public int EmAndamento { get; set; }
         public int Concluidos { get; set; }
         public decimal ValorTotal { get; set; } // cliente: total pago | montador: total recebido (líquido)
+        public double? MediaAvaliacao { get; set; } // só montador: média das estrelas recebidas
+        public int TotalAvaliacoes { get; set; }
     }
 }

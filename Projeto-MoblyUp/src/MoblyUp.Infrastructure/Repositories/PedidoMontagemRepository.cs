@@ -64,6 +64,18 @@ namespace MoblyUp.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task<(double Media, int Total)> ObterResumoAvaliacoesAsync(string montadorId)
+        {
+            // Agregação feita no SQL Server: não carrega os pedidos na memória
+            var notas = _context.PedidosMontagem
+                .Where(p => p.MontadorId == montadorId && p.AvaliacaoNota != null)
+                .Select(p => p.AvaliacaoNota!.Value);
+
+            var total = await notas.CountAsync();
+            var media = total == 0 ? 0 : await notas.AverageAsync();
+            return (media, total);
+        }
+
         public async Task<HashSet<Guid>> ObterIdsRecusadosAsync(string montadorId)
         {
             var ids = await _context.PedidosRecusados

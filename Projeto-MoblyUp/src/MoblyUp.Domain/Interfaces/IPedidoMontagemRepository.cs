@@ -18,5 +18,8 @@ namespace MoblyUp.Domain.Interfaces
         // Pedidos que o montador recusou/desistiu e não devem voltar ao feed dele
         Task RegistrarRecusaAsync(Guid pedidoId, string montadorId);
         Task<HashSet<Guid>> ObterIdsRecusadosAsync(string montadorId);
+
+        // Média das notas recebidas pelo montador e quantas avaliações ele tem
+        Task<(double Media, int Total)> ObterResumoAvaliacoesAsync(string montadorId);
     }
 }

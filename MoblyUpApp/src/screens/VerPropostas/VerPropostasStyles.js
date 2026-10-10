@@ -92,6 +92,16 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  reputacaoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+    marginTop: 2,
+  },
+  reputacaoTexto: {
+    fontSize: 12,
+    color: '#718096',
+  },
   pagamentoInfo: {
     textAlign: 'center',
     color: '#718096',

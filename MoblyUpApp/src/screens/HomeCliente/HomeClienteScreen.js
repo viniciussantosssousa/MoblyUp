@@ -138,6 +138,9 @@ export default function HomeClienteScreen() {
                     {pedido.statusDescricao}
                   </Text>
                 </View>
+                {concluido && !pedido.avaliacaoNota && (
+                  <Text style={styles.lembreteAvaliacao}>⭐ Toque para avaliar o montador</Text>
+                )}
               </TouchableOpacity>
             );
           })

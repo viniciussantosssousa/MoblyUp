@@ -110,6 +110,9 @@ namespace MoblyUp.Application.UseCases
             var pedidos = await ObterPedidosAsync(usuario);
             var montador = usuario.Perfil == TipoPerfil.Montador;
             var concluidos = pedidos.Where(p => p.Status == StatusPedido.Concluido).ToList();
+            var notas = montador
+                ? concluidos.Where(p => p.AvaliacaoNota.HasValue).Select(p => p.AvaliacaoNota!.Value).ToList()
+                : new List<int>();
 
             return new PerfilResponse
             {
@@ -130,6 +133,8 @@ namespace MoblyUp.Application.UseCases
                     EmAndamento = pedidos.Count(p => StatusAtivos.Contains(p.Status)),
                     Concluidos = concluidos.Count,
                     ValorTotal = concluidos.Sum(p => (montador ? p.ValorMontador : p.ValorProposto) ?? 0),
+                    MediaAvaliacao = notas.Count > 0 ? Math.Round(notas.Average(), 1) : null,
+                    TotalAvaliacoes = notas.Count,
                 },
             };
         }

@@ -28,6 +28,13 @@ namespace MoblyUp.Application.DTOs
         public DateTime? DataConclusao { get; set; }
         public string? FotoConclusaoUrl { get; set; }
 
+        public int? AvaliacaoNota { get; set; }
+        public string? AvaliacaoComentario { get; set; }
+
+        // Reputação do montador (preenchida no detalhe do pedido, para o cliente decidir a proposta)
+        public double? MediaAvaliacaoMontador { get; set; }
+        public int TotalAvaliacoesMontador { get; set; }
+
         public static PedidoMontagemResponse DeEntidade(PedidoMontagem pedido)
         {
             return new PedidoMontagemResponse
@@ -48,7 +55,9 @@ namespace MoblyUp.Application.DTOs
                 DataCriacao = pedido.DataCriacao,
                 DataAceite = pedido.DataAceite,
                 DataConclusao = pedido.DataConclusao,
-                FotoConclusaoUrl = pedido.FotoConclusaoUrl
+                FotoConclusaoUrl = pedido.FotoConclusaoUrl,
+                AvaliacaoNota = pedido.AvaliacaoNota,
+                AvaliacaoComentario = pedido.AvaliacaoComentario
             };
         }
 

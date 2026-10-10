@@ -7,6 +7,7 @@ import { colors } from '../../theme/colors';
 import api, { mensagemDeErro } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
+import Estrelas, { descreverReputacao } from '../../components/Estrelas';
 
 export default function VerPropostasScreen() {
   const navigation = useNavigation();
@@ -107,7 +108,17 @@ export default function VerPropostasScreen() {
           <View style={styles.propostaCard}>
             <View style={styles.montadorInfoRow}>
               <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
-              <Text style={styles.montadorNome}>{pedido.nomeMontador || 'Montador'}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.montadorNome}>{pedido.nomeMontador || 'Montador'}</Text>
+                <View style={styles.reputacaoRow}>
+                  {pedido.totalAvaliacoesMontador > 0 && (
+                    <Estrelas nota={pedido.mediaAvaliacaoMontador} tamanho={13} style={{ marginRight: 6 }} />
+                  )}
+                  <Text style={styles.reputacaoTexto}>
+                    {descreverReputacao(pedido.mediaAvaliacaoMontador, pedido.totalAvaliacoesMontador)}
+                  </Text>
+                </View>
+              </View>
             </View>
 
             <Text style={styles.valorProposta}>{formatarMoeda(pedido.valorProposto)}</Text>

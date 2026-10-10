@@ -13,6 +13,7 @@ import api, { enviarImagem } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
 import { traduzirErro } from '../../services/erros';
 import { formatarData, formatarMoeda } from '../../services/statusPedido';
+import Estrelas, { descreverReputacao } from '../../components/Estrelas';
 
 // (34) 99999-8888
 const formatarTelefone = (valor) => {
@@ -277,6 +278,19 @@ export default function PerfilScreen() {
               <Text style={styles.statsTotalLabel}>{isMontador ? 'Total recebido' : 'Total investido'}</Text>
               <Text style={styles.statsTotalValue}>{formatarMoeda(estatisticas.valorTotal)}</Text>
             </View>
+            {isMontador && (
+              <View style={[styles.statsTotalRow, { marginTop: 10 }]}>
+                <Text style={styles.statsTotalLabel}>Sua reputação</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {estatisticas.totalAvaliacoes > 0 && (
+                    <Estrelas nota={estatisticas.mediaAvaliacao} tamanho={14} style={{ marginRight: 6 }} />
+                  )}
+                  <Text style={styles.statsReputacao}>
+                    {descreverReputacao(estatisticas.mediaAvaliacao, estatisticas.totalAvaliacoes)}
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
         ) : null}
 

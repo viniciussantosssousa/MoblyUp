@@ -24,6 +24,11 @@ namespace MoblyUp.Domain.Entities
         public DateTime? DataConclusao { get; private set; }
         public string? FotoConclusaoUrl { get; private set; }
 
+        // Avaliação do cliente sobre o montador (1 a 5 estrelas), feita uma vez após a conclusão
+        public int? AvaliacaoNota { get; private set; }
+        public string? AvaliacaoComentario { get; private set; }
+        public DateTime? DataAvaliacao { get; private set; }
+
         public Usuario Cliente { get; private set; }
         public Usuario? Montador { get; private set; }
 
@@ -134,6 +139,26 @@ namespace MoblyUp.Domain.Entities
                 throw new Exception("É necessário enviar a foto antes de concluir.");
             Status = StatusPedido.Concluido;
             DataConclusao = DateTime.UtcNow;
+        }
+
+        public void Avaliar(int nota, string? comentario)
+        {
+            if (Status != StatusPedido.Concluido)
+                throw new Exception("Só é possível avaliar depois que o serviço for concluído.");
+
+            if (AvaliacaoNota.HasValue)
+                throw new Exception("Este serviço já foi avaliado.");
+
+            if (nota < 1 || nota > 5)
+                throw new Exception("A nota deve ser de 1 a 5 estrelas.");
+
+            var texto = comentario?.Trim();
+            if (texto?.Length > 500)
+                throw new Exception("O comentário pode ter no máximo 500 caracteres.");
+
+            AvaliacaoNota = nota;
+            AvaliacaoComentario = string.IsNullOrEmpty(texto) ? null : texto;
+            DataAvaliacao = DateTime.UtcNow;
         }
     }
 }

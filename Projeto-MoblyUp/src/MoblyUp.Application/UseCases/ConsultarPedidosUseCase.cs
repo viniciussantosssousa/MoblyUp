@@ -35,7 +35,16 @@ namespace MoblyUp.Application.UseCases
                     throw new UnauthorizedAccessException("Você não tem acesso a este pedido.");
             }
 
-            return PedidoMontagemResponse.DeEntidade(pedido);
+            var resposta = PedidoMontagemResponse.DeEntidade(pedido);
+
+            if (pedido.MontadorId != null)
+            {
+                var (media, total) = await _pedidoRepository.ObterResumoAvaliacoesAsync(pedido.MontadorId);
+                resposta.MediaAvaliacaoMontador = total > 0 ? Math.Round(media, 1) : null;
+                resposta.TotalAvaliacoesMontador = total;
+            }
+
+            return resposta;
         }
 
         public async Task<IEnumerable<PedidoMontagemResponse>> ObterDoClienteAsync(string clienteId)

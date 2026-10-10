@@ -47,11 +47,21 @@ namespace MoblyUp.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AvaliacaoComentario")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("AvaliacaoNota")
+                        .HasColumnType("int");
+
                     b.Property<string>("ClienteId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("DataAceite")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DataAvaliacao")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DataConclusao")

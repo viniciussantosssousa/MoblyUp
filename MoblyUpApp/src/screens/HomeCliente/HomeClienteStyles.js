@@ -9,6 +9,12 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.primary,
   },
+  lembreteAvaliacao: {
+    marginTop: 10,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#B7791F',
+  },
   orderCardCancelado: {
     opacity: 0.6,
   },
