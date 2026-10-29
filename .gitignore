@@ -9,6 +9,9 @@ obj/
 **/wwwroot/uploads/*
 !**/wwwroot/uploads/.gitkeep
 
+# Backups locais de limpeza do banco/fotos
+backup-*/
+
 # Node / Expo
 node_modules/
 .expo/
