@@ -21,6 +21,8 @@ namespace MoblyUp.Domain.Entities
 
         public DateTime DataCriacao { get; private set; }
         public DateTime? DataAceite { get; private set; }
+        // Quando o cliente aceitou o valor do montador (é o que libera o chat)
+        public DateTime? DataPropostaAceita { get; private set; }
         public DateTime? DataConclusao { get; private set; }
         public string? FotoConclusaoUrl { get; private set; }
 
@@ -110,6 +112,7 @@ namespace MoblyUp.Domain.Entities
             ValorProposto = null;
             TaxaPlataforma = null;
             ValorMontador = null;
+            DataPropostaAceita = null;
             Status = StatusPedido.Disponivel;
         }
 
@@ -119,6 +122,7 @@ namespace MoblyUp.Domain.Entities
                 throw new Exception("Não há proposta pendente para aceite.");
 
             Status = StatusPedido.AguardandoPagamento;
+            DataPropostaAceita = DateTime.UtcNow;
         }
 
         public void ConfirmarPagamento()
@@ -153,8 +157,11 @@ namespace MoblyUp.Domain.Entities
             Status == StatusPedido.AguardandoPagamento || Status == StatusPedido.EmAndamento;
 
         // Conversa visível (aberta ou só leitura): durante o serviço e depois que ele termina
+        // Só existe conversa se o cliente chegou a aceitar o valor do montador
+        // (cancelar com proposta ainda pendente não abre chat nenhum)
         public bool ChatDisponivel =>
-            ChatAberto || Status == StatusPedido.Concluido || (Status == StatusPedido.Cancelado && MontadorId != null);
+            ChatAberto ||
+            ((Status == StatusPedido.Concluido || Status == StatusPedido.Cancelado) && DataPropostaAceita.HasValue);
 
         public bool Participa(string usuarioId) => ClienteId == usuarioId || MontadorId == usuarioId;
 

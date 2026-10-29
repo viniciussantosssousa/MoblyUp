@@ -54,6 +54,38 @@ namespace MoblyUp.Tests
         }
 
         [Fact]
+        public async Task Cancelar_com_proposta_pendente_nao_cria_conversa()
+        {
+            var pedido = Pedido(StatusPedido.AguardandoAprovacaoCliente);
+            pedido.Cancelar();
+
+            Assert.False(pedido.ChatDisponivel);
+            await Assert.ThrowsAsync<InvalidOperationException>(() => Chat().ObterConversaAsync(pedido.Id, "cliente-1"));
+        }
+
+        [Fact]
+        public async Task Cancelar_depois_do_aceite_mantem_a_conversa_so_para_leitura()
+        {
+            var pedido = Pedido(StatusPedido.AguardandoPagamento);
+            await Chat().EnviarAsync(pedido.Id, "montador-1", "Aguardo o pagamento");
+            pedido.Cancelar();
+
+            var conversa = await Chat().ObterConversaAsync(pedido.Id, "cliente-1");
+            Assert.False(conversa.Aberto);
+            Assert.Single(conversa.Mensagens);
+        }
+
+        [Fact]
+        public void Montador_que_desiste_apos_o_aceite_perde_o_chat()
+        {
+            var pedido = Pedido(StatusPedido.AguardandoPagamento);
+            pedido.DesistirProposta("montador-1");
+
+            Assert.False(pedido.ChatAberto);
+            Assert.False(pedido.ChatDisponivel);
+        }
+
+        [Fact]
         public async Task Conversa_dos_dois_lados_chega_em_tempo_real_e_por_push()
         {
             var pedido = Pedido(StatusPedido.EmAndamento);

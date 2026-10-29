@@ -107,6 +107,9 @@ namespace MoblyUp.Infrastructure.Migrations
                     b.Property<DateTime>("DataCriacao")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DataPropostaAceita")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("EnderecoServico")
                         .IsRequired()
                         .HasMaxLength(250)
