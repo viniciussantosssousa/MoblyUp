@@ -8,12 +8,12 @@ using MoblyUp.Domain.Interfaces;
 
 namespace MoblyUp.Application.UseCases
 {
-    // Perfil que um usuário vê de outro: reputação, comentários e (quando liberado) o contato.
+    // Perfil que um usuário vê de outro: reputação e comentários.
     // Regras de acesso:
     // - O cliente vê o montador que propôs/atende um pedido dele (e vice-versa): pedido em comum.
     // - O montador vê o cliente que tem pedido aberto no feed, para decidir se envia proposta.
-    // - Telefone/WhatsApp só enquanto os dois têm um serviço pago em andamento.
-    // CPF, e-mail e chave Pix nunca fazem parte do perfil público.
+    // Telefone, CPF, e-mail e chave Pix NUNCA fazem parte do perfil público: a conversa acontece
+    // pelo chat do app, para o serviço e o pagamento não serem combinados por fora.
     public class PerfilPublicoUseCase
     {
         private readonly IUsuarioRepository _usuarioRepository;
@@ -39,10 +39,6 @@ namespace MoblyUp.Application.UseCases
                 ? await _pedidoRepository.ObterPorMontadorIdAsync(alvo.Id)
                 : await _pedidoRepository.ObterPorClienteIdAsync(alvo.Id);
 
-            var contatoLiberado = alvoId != solicitanteId
-                && !string.IsNullOrEmpty(alvo.Telefone)
-                && await _pedidoRepository.PossuemServicoEmAndamentoAsync(alvoId, solicitanteId);
-
             return new PerfilPublicoResponse
             {
                 Id = alvo.Id,
@@ -53,8 +49,6 @@ namespace MoblyUp.Application.UseCases
                 DataCadastro = alvo.DataCadastro,
                 ServicosConcluidos = pedidos.Count(p => p.Status == StatusPedido.Concluido),
                 Reputacao = ReputacaoResponse.DeAvaliacoes(avaliacoes),
-                ContatoLiberado = contatoLiberado,
-                Telefone = contatoLiberado ? alvo.Telefone : null,
             };
         }
 

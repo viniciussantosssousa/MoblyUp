@@ -50,7 +50,7 @@ namespace MoblyUp.Application.DTOs
         public string TipoMovel { get; set; } = string.Empty;
     }
 
-    // O que um usuário pode ver de outro com quem tem (ou pode ter) um serviço
+    // O que um usuário pode ver de outro com quem tem (ou pode ter) um serviço (sem dados de contato)
     public class PerfilPublicoResponse
     {
         public string Id { get; set; } = string.Empty;
@@ -61,9 +61,5 @@ namespace MoblyUp.Application.DTOs
         public DateTime DataCadastro { get; set; }
         public int ServicosConcluidos { get; set; }
         public ReputacaoResponse Reputacao { get; set; } = new();
-
-        // Contato só é liberado enquanto os dois têm um serviço pago em andamento
-        public bool ContatoLiberado { get; set; }
-        public string? Telefone { get; set; }
     }
 }

@@ -162,6 +162,16 @@ export default function HomeClienteScreen() {
                 {concluido && !pedido.notaMontador && (
                   <Text style={styles.lembreteAvaliacao}>⭐ Toque para avaliar o montador</Text>
                 )}
+                {pedido.mensagensNaoLidas > 0 && (
+                  <TouchableOpacity
+                    style={styles.mensagensNovas}
+                    onPress={() => navigation.navigate('Chat', { pedidoId: pedido.id })}
+                  >
+                    <Text style={styles.mensagensNovasTexto}>
+                      💬 {pedido.mensagensNaoLidas} {pedido.mensagensNaoLidas === 1 ? 'mensagem nova' : 'mensagens novas'} de {pedido.nomeMontador}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </TouchableOpacity>
             );
           })

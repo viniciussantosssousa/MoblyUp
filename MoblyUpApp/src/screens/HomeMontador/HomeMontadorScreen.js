@@ -12,6 +12,7 @@ import { ResumoReputacao } from '../../components/Reputacao';
 import { encontrarAvaliacaoPendente, adiarAvaliacao } from '../../services/avaliacoesPendentes';
 import ModalAvaliacao from '../../components/ModalAvaliacao';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
+import BotaoChat from '../../components/BotaoChat';
 
 // Serviços do montador que ainda exigem acompanhamento
 const STATUS_ATIVOS = [
@@ -173,8 +174,14 @@ export default function HomeMontadorScreen() {
                     style={styles.clienteRow}
                     media={pedido.mediaAvaliacaoCliente}
                     total={pedido.totalAvaliacoesCliente}
-                    rotuloLink={liberado ? `Contato de ${pedido.nomeCliente}` : `Cliente: ${pedido.nomeCliente}`}
+                    rotuloLink={`Cliente: ${pedido.nomeCliente}`}
                     onPress={() => navigation.navigate('PerfilPublico', { usuarioId: pedido.clienteId })}
+                  />
+
+                  <BotaoChat
+                    pedido={pedido}
+                    rotulo={`Conversar com ${pedido.nomeCliente || 'o cliente'}`}
+                    onPress={() => navigation.navigate('Chat', { pedidoId: pedido.id })}
                   />
 
                   {liberado ? (

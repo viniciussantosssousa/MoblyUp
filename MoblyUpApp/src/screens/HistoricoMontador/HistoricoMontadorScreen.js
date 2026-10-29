@@ -9,6 +9,7 @@ import { STATUS_PEDIDO, isConcluido, formatarData } from '../../services/statusP
 import Estrelas from '../../components/Estrelas';
 import { ResumoReputacao } from '../../components/Reputacao';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
+import BotaoChat from '../../components/BotaoChat';
 
 export default function HistoricoMontadorScreen() {
   const navigation = useNavigation();
@@ -93,6 +94,12 @@ export default function HistoricoMontadorScreen() {
                   </Text>
                   <Text style={styles.valor}>{formatarMoeda(pedido.valorMontador)}</Text>
                 </View>
+
+                <BotaoChat
+                  pedido={pedido}
+                  rotulo={`Conversar com ${pedido.nomeCliente || 'o cliente'}`}
+                  onPress={() => navigation.navigate('Chat', { pedidoId: pedido.id })}
+                />
 
                 {concluido && (
                   <View style={styles.avaliacao}>

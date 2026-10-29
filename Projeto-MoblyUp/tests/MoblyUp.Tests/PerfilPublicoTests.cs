@@ -1,10 +1,10 @@
+using System.Text.Json;
 using MoblyUp.Application.UseCases;
 using MoblyUp.Domain.Entities;
-using MoblyUp.Domain.Enums;
 
 namespace MoblyUp.Tests
 {
-    // Quem pode ver o perfil de quem, e quando o contato é liberado
+    // Quem pode ver o perfil de quem; dados de contato nunca aparecem
     public class PerfilPublicoTests
     {
         private readonly UsuarioRepositoryFake _usuarios = new();
@@ -47,9 +47,6 @@ namespace MoblyUp.Tests
             var perfil = await PerfilPublico().ObterAsync("cliente-1", "montador-2");
 
             Assert.Equal("cliente", perfil.Tipo);
-            // Antes de fechar negócio não há contato
-            Assert.False(perfil.ContatoLiberado);
-            Assert.Null(perfil.Telefone);
         }
 
         [Fact]
@@ -60,30 +57,23 @@ namespace MoblyUp.Tests
             var perfil = await PerfilPublico().ObterAsync("montador-1", "cliente-1");
 
             Assert.Equal("montador", perfil.Tipo);
-            Assert.False(perfil.ContatoLiberado);
         }
 
         [Fact]
-        public async Task Contato_so_e_liberado_com_servico_pago_em_andamento()
+        public async Task Telefone_e_documentos_nunca_aparecem_nem_com_servico_em_andamento()
         {
             var pedido = Pedido("cliente-1");
             pedido.ReceberProposta("montador-1", 100m);
             pedido.AceitarProposta();
-
-            Assert.Null((await PerfilPublico().ObterAsync("montador-1", "cliente-1")).Telefone);
-
             pedido.ConfirmarPagamento();
-            var doMontador = await PerfilPublico().ObterAsync("montador-1", "cliente-1");
-            var doCliente = await PerfilPublico().ObterAsync("cliente-1", "montador-1");
 
-            Assert.True(doMontador.ContatoLiberado);
-            Assert.Equal("34988887777", doMontador.Telefone);
-            Assert.Equal("34999998888", doCliente.Telefone);
+            var json = JsonSerializer.Serialize(await PerfilPublico().ObterAsync("montador-1", "cliente-1"));
 
-            // Depois de concluído, o contato volta a ficar oculto
-            pedido.EnviarFotoConclusao("http://foto.jpg");
-            pedido.ConcluirPedido();
-            Assert.Null((await PerfilPublico().ObterAsync("montador-1", "cliente-1")).Telefone);
+            Assert.DoesNotContain("34988887777", json);
+            Assert.DoesNotContain("elefone", json);
+            Assert.DoesNotContain("@teste.com", json);
+            Assert.DoesNotContain("pix", json, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("cpf", json, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
@@ -109,7 +99,6 @@ namespace MoblyUp.Tests
         {
             var perfil = await PerfilPublico().ObterAsync("cliente-2", "cliente-2");
             Assert.Equal("cliente-2", perfil.Id);
-            Assert.False(perfil.ContatoLiberado);
         }
 
         [Fact]

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using MoblyUp.API.Extensions;
+using MoblyUp.Application.DTOs;
 using MoblyUp.Application.Interfaces;
 using MoblyUp.Domain.Enums;
 using MoblyUp.Domain.Interfaces;
@@ -38,7 +39,9 @@ namespace MoblyUp.API.TempoReal
 
     // Eventos enviados ao app:
     // - "pedidoAlterado" { pedidoId }: a tela recarrega os dados
-    // - "aviso" { titulo, mensagem, pedidoId }: banner no topo da tela
+    // - "aviso" { titulo, mensagem, pedidoId, tipo }: banner no topo da tela
+    // - "mensagemChat" { ...mensagem }: nova mensagem no chat do pedido
+    // - "chatLido" { pedidoId }: a outra parte leu as mensagens
     public class SignalRTempoReal : ITempoReal
     {
         private readonly IHubContext<PedidosHub> _hub;
@@ -63,8 +66,14 @@ namespace MoblyUp.API.TempoReal
             return _hub.Clients.Groups(grupos).SendAsync("pedidoAlterado", new { pedidoId });
         }
 
-        public Task AvisarUsuarioAsync(string usuarioId, string titulo, string mensagem, Guid pedidoId) =>
-            _hub.Clients.Group(PedidosHub.GrupoUsuario(usuarioId)).SendAsync("aviso", new { titulo, mensagem, pedidoId });
+        public Task AvisarUsuarioAsync(string usuarioId, string titulo, string mensagem, Guid pedidoId, string? tipo = null) =>
+            _hub.Clients.Group(PedidosHub.GrupoUsuario(usuarioId)).SendAsync("aviso", new { titulo, mensagem, pedidoId, tipo });
+
+        public Task MensagemChatAsync(IEnumerable<string> usuarios, MensagemChatResponse mensagem) =>
+            _hub.Clients.Groups(usuarios.Distinct().Select(PedidosHub.GrupoUsuario).ToList()).SendAsync("mensagemChat", mensagem);
+
+        public Task ChatLidoAsync(string usuarioId, Guid pedidoId) =>
+            _hub.Clients.Group(PedidosHub.GrupoUsuario(usuarioId)).SendAsync("chatLido", new { pedidoId });
 
         public Task AvisarRegiaoAsync(string regiao, string titulo, string mensagem, Guid pedidoId) =>
             _hub.Clients.Group(PedidosHub.GrupoRegiao(regiao)).SendAsync("aviso", new { titulo, mensagem, pedidoId });

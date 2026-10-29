@@ -30,18 +30,18 @@ namespace MoblyUp.Infrastructure.Services
             _logger = logger;
         }
 
-        public async Task NotificarUsuarioAsync(string? usuarioId, string titulo, string mensagem, Guid pedidoId)
+        public async Task NotificarUsuarioAsync(string? usuarioId, string titulo, string mensagem, Guid pedidoId, string? tipo = null)
         {
             if (string.IsNullOrEmpty(usuarioId))
                 return;
 
-            await AvisarNaTelaAsync(() => _tempoReal.AvisarUsuarioAsync(usuarioId, titulo, mensagem, pedidoId));
+            await AvisarNaTelaAsync(() => _tempoReal.AvisarUsuarioAsync(usuarioId, titulo, mensagem, pedidoId, tipo));
 
             var usuario = await _usuarioRepository.ObterPorIdAsync(usuarioId);
             if (usuario?.ExpoPushToken == null)
                 return;
 
-            await EnviarAsync(new[] { usuario }, titulo, mensagem, pedidoId);
+            await EnviarAsync(new[] { usuario }, titulo, mensagem, pedidoId, tipo);
         }
 
         public async Task NotificarMontadoresDaRegiaoAsync(string enderecoServico, string titulo, string mensagem, Guid pedidoId)
@@ -70,7 +70,7 @@ namespace MoblyUp.Infrastructure.Services
             }
         }
 
-        private async Task EnviarAsync(IReadOnlyCollection<Usuario> destinatarios, string titulo, string mensagem, Guid pedidoId)
+        private async Task EnviarAsync(IReadOnlyCollection<Usuario> destinatarios, string titulo, string mensagem, Guid pedidoId, string? tipo = null)
         {
             if (destinatarios.Count == 0)
                 return;
@@ -85,7 +85,7 @@ namespace MoblyUp.Infrastructure.Services
                     sound = "default",
                     channelId = "default",
                     // O app usa estes dados para abrir a tela certa ao tocar na notificação
-                    data = new { pedidoId }
+                    data = new { pedidoId, tipo }
                 }).ToList();
 
                 try

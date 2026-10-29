@@ -2,15 +2,20 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import api from './api';
+import { obterChatNaTela } from './tempoReal';
 
-// Mostra a notificação mesmo com o app aberto
+// Mostra a notificação mesmo com o app aberto, exceto mensagem da conversa que já está na tela
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notificacao) => {
+    const dados = notificacao?.request?.content?.data;
+    const conversaNaTela = dados?.tipo === 'chat' && dados?.pedidoId === obterChatNaTela();
+    return {
+      shouldShowBanner: !conversaNaTela,
+      shouldShowList: !conversaNaTela,
+      shouldPlaySound: !conversaNaTela,
+      shouldSetBadge: false,
+    };
+  },
 });
 
 let tokenAtual = null;

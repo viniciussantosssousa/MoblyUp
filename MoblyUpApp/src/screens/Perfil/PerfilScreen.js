@@ -345,7 +345,7 @@ export default function PerfilScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Telefone / WhatsApp</Text>
+            <Text style={styles.label}>Telefone</Text>
             <TextInput
               style={styles.input}
               placeholder="(34) 99999-8888"
@@ -353,6 +353,7 @@ export default function PerfilScreen() {
               value={telefone}
               onChangeText={(t) => setTelefone(formatarTelefone(t))}
             />
+            <Text style={styles.helperText}>Usado só pelo suporte do MoblyUp. Nunca é mostrado a outros usuários.</Text>
           </View>
 
           <View style={styles.inputContainer}>

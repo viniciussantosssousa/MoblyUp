@@ -20,7 +20,7 @@ namespace MoblyUp.Tests
             _usuarios.Usuarios.Add(Cenario.Montador("montador-sem-pix", comPix: false));
         }
 
-        private ConsultarPedidosUseCase Consultar() => new(_pedidos, _usuarios);
+        private ConsultarPedidosUseCase Consultar() => new(_pedidos, _usuarios, new MensagemChatRepositoryFake());
         private AcoesMontadorUseCase AcoesMontador() => new(_pedidos, _usuarios, _notificacoes);
         private ResponderPropostaUseCase Responder() => new(_pedidos, _notificacoes);
         private AceitarPedidoUseCase Propor() => new(_pedidos, _usuarios, _notificacoes);

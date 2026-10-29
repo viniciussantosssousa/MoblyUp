@@ -147,6 +147,20 @@ namespace MoblyUp.Domain.Entities
             DataConclusao = DateTime.UtcNow;
         }
 
+        // Chat: abre quando o cliente aceita a proposta e dura enquanto o serviço está em andamento.
+        // Depois de concluído ou cancelado, a conversa fica só para leitura.
+        public bool ChatAberto =>
+            Status == StatusPedido.AguardandoPagamento || Status == StatusPedido.EmAndamento;
+
+        // Conversa visível (aberta ou só leitura): durante o serviço e depois que ele termina
+        public bool ChatDisponivel =>
+            ChatAberto || Status == StatusPedido.Concluido || (Status == StatusPedido.Cancelado && MontadorId != null);
+
+        public bool Participa(string usuarioId) => ClienteId == usuarioId || MontadorId == usuarioId;
+
+        public string? OutraParte(string usuarioId) =>
+            usuarioId == ClienteId ? MontadorId : usuarioId == MontadorId ? ClienteId : null;
+
         // Cliente avalia o montador
         public void AvaliarMontador(int nota, string? comentario)
         {
@@ -179,6 +193,10 @@ namespace MoblyUp.Domain.Entities
             var texto = comentario?.Trim();
             if (texto?.Length > 500)
                 throw new Exception("O comentário pode ter no máximo 500 caracteres.");
+
+            // Comentário público não pode virar canal para passar contato
+            if (ValueObjects.ProtecaoContato.Verificar(texto) != null)
+                throw new Exception(ValueObjects.ProtecaoContato.MensagemBloqueio);
 
             return string.IsNullOrEmpty(texto) ? null : texto;
         }

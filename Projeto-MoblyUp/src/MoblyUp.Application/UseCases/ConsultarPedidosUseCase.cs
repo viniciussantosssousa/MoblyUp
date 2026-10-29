@@ -12,11 +12,13 @@ namespace MoblyUp.Application.UseCases
     {
         private readonly IPedidoMontagemRepository _pedidoRepository;
         private readonly IUsuarioRepository _usuarioRepository;
+        private readonly IMensagemChatRepository _mensagemRepository;
 
-        public ConsultarPedidosUseCase(IPedidoMontagemRepository pedidoRepository, IUsuarioRepository usuarioRepository)
+        public ConsultarPedidosUseCase(IPedidoMontagemRepository pedidoRepository, IUsuarioRepository usuarioRepository, IMensagemChatRepository mensagemRepository)
         {
             _pedidoRepository = pedidoRepository;
             _usuarioRepository = usuarioRepository;
+            _mensagemRepository = mensagemRepository;
         }
 
         // Pode ver o pedido: o cliente dono, o montador vinculado ou
@@ -37,19 +39,33 @@ namespace MoblyUp.Application.UseCases
 
             var resposta = PedidoMontagemResponse.DeEntidade(pedido);
             await PreencherReputacoesAsync(new[] { resposta });
+            await PreencherMensagensNaoLidasAsync(new[] { resposta }, usuarioId);
             return resposta;
         }
 
         public async Task<IEnumerable<PedidoMontagemResponse>> ObterDoClienteAsync(string clienteId)
         {
             var pedidos = await _pedidoRepository.ObterPorClienteIdAsync(clienteId);
-            return await MontarListaAsync(pedidos.Select(PedidoMontagemResponse.DeEntidade));
+            var lista = await MontarListaAsync(pedidos.Select(PedidoMontagemResponse.DeEntidade));
+            await PreencherMensagensNaoLidasAsync(lista, clienteId);
+            return lista;
         }
 
         public async Task<IEnumerable<PedidoMontagemResponse>> ObterDoMontadorAsync(string montadorId)
         {
             var pedidos = await _pedidoRepository.ObterPorMontadorIdAsync(montadorId);
-            return await MontarListaAsync(pedidos.Select(PedidoMontagemResponse.DeEntidade));
+            var lista = await MontarListaAsync(pedidos.Select(PedidoMontagemResponse.DeEntidade));
+            await PreencherMensagensNaoLidasAsync(lista, montadorId);
+            return lista;
+        }
+
+        // Contador de mensagens novas do chat (uma consulta agrupada para a lista inteira)
+        private async Task PreencherMensagensNaoLidasAsync(IReadOnlyCollection<PedidoMontagemResponse> pedidos, string usuarioId)
+        {
+            var comChat = pedidos.Where(p => p.ChatDisponivel).Select(p => p.Id).ToList();
+            var naoLidas = await _mensagemRepository.ContarNaoLidasAsync(usuarioId, comChat);
+            foreach (var pedido in pedidos)
+                pedido.MensagensNaoLidas = naoLidas.GetValueOrDefault(pedido.Id);
         }
 
         // Pedidos abertos para propostas (somente montadores). A região vem no formato
@@ -75,7 +91,7 @@ namespace MoblyUp.Application.UseCases
             return await MontarListaAsync(pedidos.Select(PedidoMontagemResponse.DeEntidade));
         }
 
-        private async Task<IEnumerable<PedidoMontagemResponse>> MontarListaAsync(IEnumerable<PedidoMontagemResponse> pedidos)
+        private async Task<List<PedidoMontagemResponse>> MontarListaAsync(IEnumerable<PedidoMontagemResponse> pedidos)
         {
             var lista = pedidos.OrderByDescending(p => p.DataCriacao).ToList();
             await PreencherReputacoesAsync(lista);

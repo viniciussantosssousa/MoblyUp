@@ -29,6 +29,7 @@ import PerfilScreen from '../screens/Perfil/PerfilScreen';
 import CompletarCadastroScreen from '../screens/CompletarCadastro/CompletarCadastroScreen';
 import PerfilPublicoScreen from '../screens/PerfilPublico/PerfilPublicoScreen';
 import AvaliarClienteScreen from '../screens/AvaliarCliente/AvaliarClienteScreen';
+import ChatScreen from '../screens/Chat/ChatScreen';
 
 const Stack = createNativeStackNavigator();
 const navigationRef = createNavigationContainerRef();
@@ -43,8 +44,8 @@ export default function Routes() {
     if (Platform.OS === 'web') return;
 
     const tratarResposta = (resposta) => {
-      const pedidoId = resposta?.notification?.request?.content?.data?.pedidoId;
-      if (pedidoId) setPedidoDaNotificacao(pedidoId);
+      const dados = resposta?.notification?.request?.content?.data;
+      if (dados?.pedidoId) setPedidoDaNotificacao({ pedidoId: dados.pedidoId, tipo: dados.tipo });
     };
 
     Notifications.getLastNotificationResponseAsync().then((resposta) => {
@@ -72,8 +73,12 @@ export default function Routes() {
   useEffect(() => {
     if (!pedidoDaNotificacao || !signed || !navegacaoPronta || cpfPendente) return;
 
-    if (user?.tipo === 'cliente') {
-      navigationRef.navigate('DetalhesPedido', { pedido: { id: pedidoDaNotificacao } });
+    const { pedidoId, tipo } = pedidoDaNotificacao;
+    if (tipo === 'chat') {
+      // Mensagem nova: abre direto a conversa
+      navigationRef.navigate('Chat', { pedidoId });
+    } else if (user?.tipo === 'cliente') {
+      navigationRef.navigate('DetalhesPedido', { pedido: { id: pedidoId } });
     } else {
       // O montador acompanha propostas e serviços liberados na tela inicial
       navigationRef.navigate('HomeMontador');
@@ -109,6 +114,7 @@ export default function Routes() {
               <Stack.Screen name="VerPropostas" component={VerPropostasScreen} />
               <Stack.Screen name="Perfil" component={PerfilScreen} />
               <Stack.Screen name="PerfilPublico" component={PerfilPublicoScreen} />
+              <Stack.Screen name="Chat" component={ChatScreen} />
             </>
           ) : (
             <>
@@ -119,6 +125,7 @@ export default function Routes() {
               <Stack.Screen name="AvaliarCliente" component={AvaliarClienteScreen} />
               <Stack.Screen name="Perfil" component={PerfilScreen} />
               <Stack.Screen name="PerfilPublico" component={PerfilPublicoScreen} />
+              <Stack.Screen name="Chat" component={ChatScreen} />
             </>
           )
         )}
@@ -127,7 +134,7 @@ export default function Routes() {
 
       {/* Avisos em tempo real; tocar abre o pedido como na notificação push */}
       {signed && !cpfPendente && (
-        <AvisoTopo onAbrir={(aviso) => aviso?.pedidoId && setPedidoDaNotificacao(aviso.pedidoId)} />
+        <AvisoTopo onAbrir={(aviso) => aviso?.pedidoId && setPedidoDaNotificacao({ pedidoId: aviso.pedidoId, tipo: aviso.tipo })} />
       )}
     </NavigationContainer>
   );

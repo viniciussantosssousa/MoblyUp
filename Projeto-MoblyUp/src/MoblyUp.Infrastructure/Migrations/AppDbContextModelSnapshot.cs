@@ -41,6 +41,39 @@ namespace MoblyUp.Infrastructure.Migrations
                     b.ToTable("Categorias", (string)null);
                 });
 
+            modelBuilder.Entity("MoblyUp.Domain.Entities.MensagemChat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DataEnvio")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DataLeitura")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("PedidoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RemetenteId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RemetenteId");
+
+                    b.HasIndex("PedidoId", "DataEnvio");
+
+                    b.ToTable("MensagensChat", (string)null);
+                });
+
             modelBuilder.Entity("MoblyUp.Domain.Entities.PedidoMontagem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -245,6 +278,21 @@ namespace MoblyUp.Infrastructure.Migrations
                     b.HasIndex("ExpoPushToken");
 
                     b.ToTable("Usuarios", (string)null);
+                });
+
+            modelBuilder.Entity("MoblyUp.Domain.Entities.MensagemChat", b =>
+                {
+                    b.HasOne("MoblyUp.Domain.Entities.PedidoMontagem", null)
+                        .WithMany()
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MoblyUp.Domain.Entities.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("RemetenteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MoblyUp.Domain.Entities.PedidoMontagem", b =>

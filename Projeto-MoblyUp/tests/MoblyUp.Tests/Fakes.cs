@@ -1,3 +1,4 @@
+using MoblyUp.Application.DTOs;
 using MoblyUp.Application.Interfaces;
 using MoblyUp.Domain.Entities;
 using MoblyUp.Domain.Enums;
@@ -74,10 +75,6 @@ namespace MoblyUp.Tests
         public Task<bool> PossuemPedidoEmComumAsync(string a, string b) =>
             Task.FromResult(Pedidos.Any(p => (p.ClienteId == a && p.MontadorId == b) || (p.ClienteId == b && p.MontadorId == a)));
 
-        public Task<bool> PossuemServicoEmAndamentoAsync(string a, string b) =>
-            Task.FromResult(Pedidos.Any(p => p.Status == StatusPedido.EmAndamento &&
-                ((p.ClienteId == a && p.MontadorId == b) || (p.ClienteId == b && p.MontadorId == a))));
-
         public Task<bool> ClienteTemPedidoAbertoAsync(string clienteId) =>
             Task.FromResult(Pedidos.Any(p => p.ClienteId == clienteId && p.Status == StatusPedido.Disponivel));
     }
@@ -86,17 +83,77 @@ namespace MoblyUp.Tests
     public class NotificacaoServiceFake : INotificacaoService
     {
         public List<(string UsuarioId, string Titulo)> Enviadas { get; } = new();
+        public List<(string UsuarioId, string Titulo, string? Tipo)> EnviadasComTipo { get; } = new();
         public List<(string Endereco, string Titulo)> ParaRegiao { get; } = new();
 
-        public Task NotificarUsuarioAsync(string? usuarioId, string titulo, string mensagem, Guid pedidoId)
+        public Task NotificarUsuarioAsync(string? usuarioId, string titulo, string mensagem, Guid pedidoId, string? tipo = null)
         {
-            if (usuarioId != null) Enviadas.Add((usuarioId, titulo));
+            if (usuarioId != null)
+            {
+                Enviadas.Add((usuarioId, titulo));
+                EnviadasComTipo.Add((usuarioId, titulo, tipo));
+            }
             return Task.CompletedTask;
         }
 
         public Task NotificarMontadoresDaRegiaoAsync(string enderecoServico, string titulo, string mensagem, Guid pedidoId)
         {
             ParaRegiao.Add((enderecoServico, titulo));
+            return Task.CompletedTask;
+        }
+    }
+
+    public class MensagemChatRepositoryFake : IMensagemChatRepository
+    {
+        public List<MensagemChat> Mensagens { get; } = new();
+
+        public Task AdicionarAsync(MensagemChat mensagem) { Mensagens.Add(mensagem); return Task.CompletedTask; }
+
+        public Task<IReadOnlyList<MensagemChat>> ObterDoPedidoAsync(Guid pedidoId) =>
+            Task.FromResult<IReadOnlyList<MensagemChat>>(Mensagens.Where(m => m.PedidoId == pedidoId).OrderBy(m => m.DataEnvio).ToList());
+
+        public Task<IReadOnlyList<string>> ObterTextosRecentesAsync(Guid pedidoId, string remetenteId, TimeSpan janela, int limite) =>
+            Task.FromResult<IReadOnlyList<string>>(Mensagens
+                .Where(m => m.PedidoId == pedidoId && m.RemetenteId == remetenteId && m.DataEnvio >= DateTime.UtcNow - janela)
+                .OrderByDescending(m => m.DataEnvio).ThenByDescending(m => Mensagens.IndexOf(m))
+                .Take(limite).Select(m => m.Texto).ToList());
+
+        public Task<int> MarcarComoLidasAsync(Guid pedidoId, string leitorId)
+        {
+            var naoLidas = Mensagens.Where(m => m.PedidoId == pedidoId && m.RemetenteId != leitorId && m.DataLeitura == null).ToList();
+            naoLidas.ForEach(m => m.MarcarComoLida());
+            return Task.FromResult(naoLidas.Count);
+        }
+
+        public Task<Dictionary<Guid, int>> ContarNaoLidasAsync(string usuarioId, IEnumerable<Guid> pedidoIds)
+        {
+            var ids = pedidoIds.ToHashSet();
+            return Task.FromResult(Mensagens
+                .Where(m => ids.Contains(m.PedidoId) && m.RemetenteId != usuarioId && m.DataLeitura == null)
+                .GroupBy(m => m.PedidoId)
+                .ToDictionary(g => g.Key, g => g.Count()));
+        }
+    }
+
+    // Guarda os eventos de tempo real para os testes conferirem
+    public class TempoRealFake : ITempoReal
+    {
+        public List<(IEnumerable<string> Usuarios, string Texto)> MensagensChat { get; } = new();
+        public List<(string UsuarioId, Guid PedidoId)> Leituras { get; } = new();
+
+        public Task PedidoAlteradoAsync(Guid pedidoId, string? regiao, IEnumerable<string?> usuarios) => Task.CompletedTask;
+        public Task AvisarUsuarioAsync(string usuarioId, string titulo, string mensagem, Guid pedidoId, string? tipo = null) => Task.CompletedTask;
+        public Task AvisarRegiaoAsync(string regiao, string titulo, string mensagem, Guid pedidoId) => Task.CompletedTask;
+
+        public Task MensagemChatAsync(IEnumerable<string> usuarios, MensagemChatResponse mensagem)
+        {
+            MensagensChat.Add((usuarios.ToList(), mensagem.Texto));
+            return Task.CompletedTask;
+        }
+
+        public Task ChatLidoAsync(string usuarioId, Guid pedidoId)
+        {
+            Leituras.Add((usuarioId, pedidoId));
             return Task.CompletedTask;
         }
     }

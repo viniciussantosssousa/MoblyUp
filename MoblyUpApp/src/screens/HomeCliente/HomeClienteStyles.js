@@ -9,6 +9,18 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.primary,
   },
+  mensagensNovas: {
+    marginTop: 10,
+    backgroundColor: '#EBF8FF',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  mensagensNovasTexto: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#2B6CB0',
+  },
   lembreteAvaliacao: {
     marginTop: 10,
     fontSize: 13,

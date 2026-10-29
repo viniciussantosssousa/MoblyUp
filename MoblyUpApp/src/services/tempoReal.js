@@ -6,11 +6,18 @@ import { auth } from './firebaseConfig';
 // Eventos recebidos:
 // - "pedidoAlterado": algum pedido do usuário (ou do feed da região) mudou -> telas recarregam
 // - "aviso": mensagem para mostrar no topo da tela (nova proposta, pedido novo na região...)
+// - "mensagemChat": nova mensagem no chat de um pedido
+// - "chatLido": a outra parte leu as mensagens
 
 const URL_HUB = API_URL.replace(/\/api\/?$/, '') + '/hubs/pedidos';
 
-const ouvintes = { pedidoAlterado: new Set(), aviso: new Set() };
+const ouvintes = { pedidoAlterado: new Set(), aviso: new Set(), mensagemChat: new Set(), chatLido: new Set() };
 let conexao = null;
+
+// Conversa aberta na tela agora: os avisos de mensagem dela não precisam de banner
+let chatNaTela = null;
+export const definirChatNaTela = (pedidoId) => { chatNaTela = pedidoId; };
+export const obterChatNaTela = () => chatNaTela;
 
 const emitir = (evento, dados) => ouvintes[evento].forEach((ouvinte) => {
   try { ouvinte(dados); } catch (error) { console.log(`Erro ao tratar "${evento}":`, error); }
@@ -42,6 +49,8 @@ export const conectarTempoReal = async () => {
 
   conexao.on('pedidoAlterado', (dados) => emitir('pedidoAlterado', dados));
   conexao.on('aviso', (dados) => emitir('aviso', dados));
+  conexao.on('mensagemChat', (dados) => emitir('mensagemChat', dados));
+  conexao.on('chatLido', (dados) => emitir('chatLido', dados));
   // Ao reconectar pode ter perdido eventos: pede para as telas recarregarem
   conexao.onreconnected(() => emitir('pedidoAlterado', {}));
 

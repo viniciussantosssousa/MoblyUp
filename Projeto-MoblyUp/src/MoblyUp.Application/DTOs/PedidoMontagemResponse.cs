@@ -35,6 +35,11 @@ namespace MoblyUp.Application.DTOs
         public int? NotaCliente { get; set; }
         public string? ComentarioCliente { get; set; }
 
+        // Chat do serviço: aberto (pode enviar), disponível (pode ler) e mensagens não lidas por quem consulta
+        public bool ChatAberto { get; set; }
+        public bool ChatDisponivel { get; set; }
+        public int MensagensNaoLidas { get; set; }
+
         // Reputação geral de cada parte, para um decidir se faz negócio com o outro
         public double? MediaAvaliacaoMontador { get; set; }
         public int TotalAvaliacoesMontador { get; set; }
@@ -66,7 +71,9 @@ namespace MoblyUp.Application.DTOs
                 NotaMontador = pedido.NotaMontador,
                 ComentarioMontador = pedido.ComentarioMontador,
                 NotaCliente = pedido.NotaCliente,
-                ComentarioCliente = pedido.ComentarioCliente
+                ComentarioCliente = pedido.ComentarioCliente,
+                ChatAberto = pedido.ChatAberto,
+                ChatDisponivel = pedido.ChatDisponivel
             };
         }
 

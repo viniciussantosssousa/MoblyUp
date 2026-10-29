@@ -10,6 +10,7 @@ import { STATUS_PEDIDO, formatarData, formatarMoeda } from '../../services/statu
 import Estrelas from '../../components/Estrelas';
 import { ResumoReputacao } from '../../components/Reputacao';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
+import BotaoChat from '../../components/BotaoChat';
 
 // Texto e ícone exibidos para cada etapa da jornada do serviço
 const ETAPAS = {
@@ -148,6 +149,13 @@ export default function DetalhesPedidoScreen() {
               <Text style={styles.actionButtonText}>Pagar {formatarMoeda(pedidoData.valorProposto)} via PIX</Text>
             </TouchableOpacity>
           )}
+
+          <BotaoChat
+            pedido={pedidoData}
+            rotulo="Conversar com o montador"
+            style={{ alignSelf: 'stretch' }}
+            onPress={() => navigation.navigate('Chat', { pedidoId })}
+          />
         </View>
 
         {pedidoData.montadorId ? (
@@ -165,11 +173,7 @@ export default function DetalhesPedidoScreen() {
               </View>
               <Ionicons name="chevron-forward" size={20} color="#A0AEC0" />
             </View>
-            <Text style={styles.pessoaDica}>
-              {status === STATUS_PEDIDO.EM_ANDAMENTO
-                ? 'Toque para ver o telefone e o WhatsApp do montador'
-                : 'Toque para ver o perfil e as avaliações'}
-            </Text>
+            <Text style={styles.pessoaDica}>Toque para ver o perfil e as avaliações</Text>
           </TouchableOpacity>
         ) : null}
 

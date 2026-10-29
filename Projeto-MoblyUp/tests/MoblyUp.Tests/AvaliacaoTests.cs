@@ -110,14 +110,14 @@ namespace MoblyUp.Tests
             // Novo pedido do mesmo cliente, aberto no feed: o montador vê a reputação do cliente
             var novo = Cenario.Pedido("cliente-1");
             _pedidos.Pedidos.Add(novo);
-            var feed = await new ConsultarPedidosUseCase(_pedidos, _usuarios).ObterDisponiveisAsync("montador-2", null);
+            var feed = await new ConsultarPedidosUseCase(_pedidos, _usuarios, new MensagemChatRepositoryFake()).ObterDisponiveisAsync("montador-2", null);
             var noFeed = feed.Single(p => p.Id == novo.Id);
             Assert.Equal(3, noFeed.MediaAvaliacaoCliente);
             Assert.Equal(1, noFeed.TotalAvaliacoesCliente);
 
             // Proposta do montador-1: o cliente vê a reputação do montador
             novo.ReceberProposta("montador-1", 150m);
-            var detalhe = await new ConsultarPedidosUseCase(_pedidos, _usuarios).ObterPorIdAsync(novo.Id, "cliente-1");
+            var detalhe = await new ConsultarPedidosUseCase(_pedidos, _usuarios, new MensagemChatRepositoryFake()).ObterPorIdAsync(novo.Id, "cliente-1");
             Assert.Equal(4.5, detalhe!.MediaAvaliacaoMontador);
             Assert.Equal(2, detalhe.TotalAvaliacoesMontador);
         }

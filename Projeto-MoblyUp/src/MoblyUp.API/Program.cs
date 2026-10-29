@@ -87,6 +87,7 @@ builder.Services.AddSingleton<ITempoReal, SignalRTempoReal>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 builder.Services.AddScoped<IPedidoMontagemRepository, PedidoMontagemRepository>();
+builder.Services.AddScoped<IMensagemChatRepository, MensagemChatRepository>();
 
 // Notificações push via Expo (o envio nunca bloqueia o pedido por mais de 10s)
 builder.Services.AddHttpClient<INotificacaoService, ExpoNotificacaoService>(client =>
@@ -101,6 +102,7 @@ builder.Services.AddScoped<ConsultarPedidosUseCase>();
 builder.Services.AddScoped<ResponderPropostaUseCase>();
 builder.Services.AddScoped<AcoesMontadorUseCase>();
 builder.Services.AddScoped<PerfilPublicoUseCase>();
+builder.Services.AddScoped<ChatUseCase>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

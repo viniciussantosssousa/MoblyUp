@@ -13,6 +13,19 @@
       "runtimeExecutable": "dotnet",
       "runtimeArgs": ["run", "--project", "Projeto-MoblyUp/src/MoblyUp.API", "--launch-profile", "http"],
       "port": 5007
+    },
+    {
+      "name": "moblyup-api-paralela",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set ASPNETCORE_ENVIRONMENT=Development&& dotnet run -c Release --no-launch-profile --project Projeto-MoblyUp/src/MoblyUp.API --urls http://localhost:5008"],
+      "port": 5008
+    },
+    {
+      "name": "moblyup-web-paralelo",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set EXPO_PUBLIC_API_URL=http://localhost:5008/api&& npx expo start --web --port 8082"],
+      "cwd": "MoblyUpApp",
+      "port": 8082
     }
   ]
 }

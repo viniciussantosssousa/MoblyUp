@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Text, TouchableOpacity, View, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ouvir } from '../services/tempoReal';
+import { ouvir, obterChatNaTela } from '../services/tempoReal';
 import { pushAtivo } from '../services/notificacoes';
 import { colors } from '../theme/colors';
 
@@ -17,12 +17,16 @@ export default function AvisoTopo({ onAbrir }) {
 
   const esconder = () => {
     clearTimeout(timer.current);
-    Animated.timing(posicao, { toValue: -160, duration: 220, useNativeDriver: Platform.OS !== 'web' })
-      .start(() => setAviso(null));
+    Animated.timing(posicao, { toValue: -160, duration: 220, useNativeDriver: Platform.OS !== 'web' }).start();
+    // Remove pelo relógio, não pelo fim da animação: com a aba em segundo plano o navegador
+    // pausa as animações e o aviso ficaria preso na tela
+    timer.current = setTimeout(() => setAviso(null), 260);
   };
 
   useEffect(() => ouvir('aviso', (dados) => {
     if (pushAtivo()) return;
+    // Mensagem da conversa que já está aberta na tela: ela aparece no próprio chat
+    if (dados?.tipo === 'chat' && dados.pedidoId === obterChatNaTela()) return;
     setAviso(dados);
     Animated.spring(posicao, { toValue: 0, useNativeDriver: Platform.OS !== 'web' }).start();
     clearTimeout(timer.current);

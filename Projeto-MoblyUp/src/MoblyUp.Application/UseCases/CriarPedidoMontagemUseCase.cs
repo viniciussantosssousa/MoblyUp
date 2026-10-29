@@ -5,6 +5,7 @@ using MoblyUp.Application.Interfaces;
 using MoblyUp.Domain.Entities;
 using MoblyUp.Domain.Enums;
 using MoblyUp.Domain.Interfaces;
+using MoblyUp.Domain.ValueObjects;
 
 namespace MoblyUp.Application.UseCases
 {
@@ -32,6 +33,10 @@ namespace MoblyUp.Application.UseCases
 
             if (string.IsNullOrWhiteSpace(request.TipoMovel) || string.IsNullOrWhiteSpace(request.EnderecoServico))
                 throw new Exception("Informe o tipo do móvel e o endereço do serviço.");
+
+            // A descrição aparece para todos os montadores da região: não pode levar contato
+            if (ProtecaoContato.Verificar($"{request.TipoMovel} {request.TamanhoMovel}") != null)
+                throw new Exception(ProtecaoContato.MensagemBloqueio);
 
             var pedido = new PedidoMontagem(
                 clienteId,

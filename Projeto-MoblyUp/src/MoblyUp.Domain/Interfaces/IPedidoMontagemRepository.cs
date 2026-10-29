@@ -26,7 +26,6 @@ namespace MoblyUp.Domain.Interfaces
 
         // Relações entre usuários (controlam quem pode ver o perfil e o contato de quem)
         Task<bool> PossuemPedidoEmComumAsync(string usuarioA, string usuarioB);
-        Task<bool> PossuemServicoEmAndamentoAsync(string usuarioA, string usuarioB);
         Task<bool> ClienteTemPedidoAbertoAsync(string clienteId);
     }
 }

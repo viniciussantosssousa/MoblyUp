@@ -108,12 +108,6 @@ namespace MoblyUp.Infrastructure.Repositories
                 (p.ClienteId == usuarioA && p.MontadorId == usuarioB) ||
                 (p.ClienteId == usuarioB && p.MontadorId == usuarioA));
 
-        public Task<bool> PossuemServicoEmAndamentoAsync(string usuarioA, string usuarioB) =>
-            _context.PedidosMontagem.AnyAsync(p =>
-                p.Status == StatusPedido.EmAndamento &&
-                ((p.ClienteId == usuarioA && p.MontadorId == usuarioB) ||
-                 (p.ClienteId == usuarioB && p.MontadorId == usuarioA)));
-
         public Task<bool> ClienteTemPedidoAbertoAsync(string clienteId) =>
             _context.PedidosMontagem.AnyAsync(p => p.ClienteId == clienteId && p.Status == StatusPedido.Disponivel);
 

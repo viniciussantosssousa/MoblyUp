@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Linking, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { colors } from '../../theme/colors';
@@ -7,12 +7,8 @@ import api, { mensagemDeErro } from '../../services/api';
 import { formatarData } from '../../services/statusPedido';
 import { QuadroReputacao, ListaAvaliacoes } from '../../components/Reputacao';
 
-// (34) 99999-8888
-const formatarTelefone = (n = '') =>
-  n.length === 11 ? `(${n.slice(0, 2)}) ${n.slice(2, 7)}-${n.slice(7)}` :
-  n.length === 10 ? `(${n.slice(0, 2)}) ${n.slice(2, 6)}-${n.slice(6)}` : n;
-
-// Perfil de outra pessoa (cliente ou montador): reputação, comentários e contato quando liberado
+// Perfil de outra pessoa (cliente ou montador): reputação e comentários.
+// Sem telefone ou outros contatos: a conversa acontece pelo chat do app.
 export default function PerfilPublicoScreen() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -29,9 +25,6 @@ export default function PerfilPublicoScreen() {
       .catch((e) => ativo && setErro(mensagemDeErro(e, 'Não foi possível carregar o perfil.')));
     return () => { ativo = false; };
   }, [usuarioId]));
-
-  const abrirWhatsApp = () => Linking.openURL(`https://wa.me/55${perfil.telefone}`);
-  const ligar = () => Linking.openURL(`tel:${perfil.telefone}`);
 
   const montador = perfil?.tipo === 'montador';
 
@@ -65,24 +58,12 @@ export default function PerfilPublicoScreen() {
             </Text>
           </View>
 
-          {perfil.contatoLiberado && (
-            <View style={styles.contatoCard}>
-              <Text style={styles.contatoTitulo}>Contato liberado para o serviço em andamento</Text>
-              <Text style={styles.contatoTelefone}>{formatarTelefone(perfil.telefone)}</Text>
-              <View style={styles.contatoBotoes}>
-                <TouchableOpacity style={[styles.contatoBotao, styles.whatsapp]} onPress={abrirWhatsApp}>
-                  <Ionicons name="logo-whatsapp" size={18} color={colors.white} />
-                  <Text style={styles.contatoBotaoTexto}>WhatsApp</Text>
-                </TouchableOpacity>
-                {Platform.OS !== 'web' && (
-                  <TouchableOpacity style={[styles.contatoBotao, styles.ligar]} onPress={ligar}>
-                    <Ionicons name="call" size={18} color={colors.white} />
-                    <Text style={styles.contatoBotaoTexto}>Ligar</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-          )}
+          <View style={styles.avisoContato}>
+            <Ionicons name="shield-checkmark" size={18} color="#2F855A" />
+            <Text style={styles.avisoContatoTexto}>
+              Para sua segurança, a conversa com {montador ? 'o montador' : 'o cliente'} acontece pelo chat do MoblyUp, aberto quando a proposta é aceita.
+            </Text>
+          </View>
 
           <View style={styles.card}>
             <Text style={styles.cardTitulo}>Reputação</Text>
@@ -125,16 +106,11 @@ const styles = StyleSheet.create({
   badge: { backgroundColor: '#EDF2F7', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, marginTop: 8 },
   badgeTexto: { fontSize: 13, fontWeight: 'bold', color: colors.primary },
   info: { fontSize: 13, color: '#718096', marginTop: 6 },
-  contatoCard: {
-    backgroundColor: '#F0FFF4', borderWidth: 1, borderColor: '#9AE6B4', borderRadius: 12, padding: 16, marginBottom: 16,
+  avisoContato: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0FFF4', borderWidth: 1,
+    borderColor: '#C6F6D5', borderRadius: 12, padding: 14, marginBottom: 16,
   },
-  contatoTitulo: { fontSize: 13, color: '#276749', fontWeight: '600' },
-  contatoTelefone: { fontSize: 20, fontWeight: 'bold', color: '#22543D', marginTop: 6 },
-  contatoBotoes: { flexDirection: 'row', marginTop: 12 },
-  contatoBotao: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, marginRight: 10 },
-  whatsapp: { backgroundColor: '#25D366' },
-  ligar: { backgroundColor: colors.primary },
-  contatoBotaoTexto: { color: colors.white, fontWeight: 'bold', marginLeft: 6 },
+  avisoContatoTexto: { flex: 1, fontSize: 13, color: '#276749', marginLeft: 10, lineHeight: 18 },
   card: { backgroundColor: colors.white, borderRadius: 12, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: colors.border },
   cardTitulo: { fontSize: 16, fontWeight: 'bold', color: colors.primary, marginBottom: 16 },
 });
