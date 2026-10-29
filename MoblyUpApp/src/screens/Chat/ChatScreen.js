@@ -9,6 +9,7 @@ import { styles } from './ChatStyles';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../contexts/AuthContext';
 import api, { mensagemDeErro } from '../../services/api';
+import { descreverDataServico } from '../../services/datas';
 import { ouvir, definirChatNaTela } from '../../services/tempoReal';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
 
@@ -148,6 +149,7 @@ export default function ChatScreen() {
             <Text style={styles.headerNome} numberOfLines={1}>{conversa?.outraParteNome || 'Conversa'}</Text>
             <Text style={styles.headerInfo} numberOfLines={1}>
               {conversa ? `${conversa.outraParteTipo === 'montador' ? 'Montador' : 'Cliente'} · ${conversa.tipoMovel}` : ''}
+              {conversa?.dataCombinada ? ` · ${descreverDataServico(conversa.dataCombinada)}` : ''}
             </Text>
           </View>
         </TouchableOpacity>

@@ -52,6 +52,7 @@ namespace MoblyUp.Application.UseCases
             {
                 PedidoId = pedido.Id,
                 TipoMovel = pedido.TipoMovel,
+                DataCombinada = pedido.DataProposta,
                 Status = pedido.Status,
                 Aberto = pedido.ChatAberto,
                 OutraParteId = pedido.OutraParte(usuarioId),

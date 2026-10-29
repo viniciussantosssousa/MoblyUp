@@ -19,6 +19,14 @@ namespace MoblyUp.Domain.Entities
 
         public StatusPedido Status { get; private set; }
 
+        // Dia do serviço (o horário é combinado pelo chat depois do aceite):
+        // o cliente pede uma data e o montador concorda ou sugere outra junto com o valor.
+        // Depois que o cliente aceita a proposta, DataProposta é a data combinada.
+        public DateOnly DataDesejada { get; private set; }
+        public DateOnly? DataProposta { get; private set; }
+
+        public bool PropostaMudaData => DataProposta.HasValue && DataProposta.Value != DataDesejada;
+
         public DateTime DataCriacao { get; private set; }
         public DateTime? DataAceite { get; private set; }
         // Quando o cliente aceitou o valor do montador (é o que libera o chat)
@@ -42,9 +50,12 @@ namespace MoblyUp.Domain.Entities
 
         protected PedidoMontagem() { }
 
-        public PedidoMontagem(string clienteId, string tipoMovel, string tamanhoMovel, string? urlFotoMovelTemporaria, string enderecoServico)
+        public PedidoMontagem(string clienteId, string tipoMovel, string tamanhoMovel, string? urlFotoMovelTemporaria, string enderecoServico, DateOnly dataDesejada)
         {
+            ValueObjects.DataServico.Validar(dataDesejada, "data desejada para o serviço");
+
             Id = Guid.NewGuid();
+            DataDesejada = dataDesejada;
             ClienteId = clienteId;
             TipoMovel = tipoMovel;
             TamanhoMovel = tamanhoMovel;
@@ -54,7 +65,8 @@ namespace MoblyUp.Domain.Entities
             DataCriacao = DateTime.UtcNow;
         }
 
-        public void ReceberProposta(string montadorId, decimal valorProposto)
+        // dataProposta: o montador concorda com a data do cliente (null ou a mesma data) ou sugere outra
+        public void ReceberProposta(string montadorId, decimal valorProposto, DateOnly? dataProposta = null)
         {
             if (Status != StatusPedido.Disponivel)
                 throw new Exception("Este pedido não está mais disponível para propostas.");
@@ -65,8 +77,14 @@ namespace MoblyUp.Domain.Entities
             if (montadorId == ClienteId)
                 throw new Exception("Você não pode enviar proposta para o seu próprio pedido.");
 
+            var data = dataProposta ?? DataDesejada;
+            if (data == DataDesejada && data < ValueObjects.DataServico.Hoje())
+                throw new Exception("A data pedida pelo cliente já passou. Sugira outra data na proposta.");
+            ValueObjects.DataServico.Validar(data, "data sugerida");
+
             MontadorId = montadorId;
             ValorProposto = valorProposto;
+            DataProposta = data;
 
             TaxaPlataforma = valorProposto * 0.15m;
             ValorMontador = valorProposto - TaxaPlataforma;
@@ -112,6 +130,7 @@ namespace MoblyUp.Domain.Entities
             ValorProposto = null;
             TaxaPlataforma = null;
             ValorMontador = null;
+            DataProposta = null;
             DataPropostaAceita = null;
             Status = StatusPedido.Disponivel;
         }

@@ -150,6 +150,12 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
+  infoNota: {
+    fontSize: 12,
+    color: '#718096',
+    marginTop: -4,
+    marginBottom: 12,
+  },
   infoLabel: {
     fontSize: 14,
     color: '#718096',

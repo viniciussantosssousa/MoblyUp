@@ -2,6 +2,12 @@ import { StyleSheet, Platform } from 'react-native';
 import { colors } from '../../theme/colors';
 
 export const styles = StyleSheet.create({
+  ajudaData: {
+    fontSize: 12,
+    color: '#718096',
+    marginTop: 8,
+    lineHeight: 17,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,

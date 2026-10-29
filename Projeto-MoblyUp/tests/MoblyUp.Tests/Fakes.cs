@@ -162,6 +162,9 @@ namespace MoblyUp.Tests
     {
         public const string Endereco = "Rua A, 10, Centro - Uberaba - MG";
 
+        // Data padrão dos pedidos de teste: daqui a 3 dias (sempre no futuro)
+        public static DateOnly Data => DataServico.Hoje().AddDays(3);
+
         public static Usuario Cliente(string id = "cliente-1", bool comCpf = true) =>
             new("Cliente", comCpf ? GerarCpf(id) : null, $"{id}@teste.com", "", "", TipoPerfil.Cliente, id);
 
@@ -190,6 +193,6 @@ namespace MoblyUp.Tests
         }
 
         public static PedidoMontagem Pedido(string clienteId = "cliente-1") =>
-            new(clienteId, "Guarda-roupa", "6 portas", null, Endereco);
+            new(clienteId, "Guarda-roupa", "6 portas", null, Endereco, Data);
     }
 }

@@ -39,14 +39,18 @@ namespace MoblyUp.Application.UseCases
             if (pedido == null)
                 throw new Exception("Pedido não encontrado.");
 
-            pedido.ReceberProposta(montadorId, request.ValorProposto);
+            pedido.ReceberProposta(montadorId, request.ValorProposto, request.DataProposta);
 
             await _pedidoRepository.AtualizarAsync(pedido);
+
+            var data = pedido.PropostaMudaData
+                ? $"para {Datas.Formatar(pedido.DataProposta!.Value)} (sugeriu outra data; você pediu {Datas.Formatar(pedido.DataDesejada)})"
+                : $"na data que você pediu ({Datas.Formatar(pedido.DataDesejada)})";
 
             await _notificacaoService.NotificarUsuarioAsync(
                 pedido.ClienteId,
                 "Nova proposta recebida! 💰",
-                $"{montador.Nome} quer montar seu {pedido.TipoMovel} por {Moeda.Formatar(pedido.ValorProposto)}.",
+                $"{montador.Nome} quer montar seu {pedido.TipoMovel} por {Moeda.Formatar(pedido.ValorProposto)} {data}.",
                 pedido.Id);
         }
     }

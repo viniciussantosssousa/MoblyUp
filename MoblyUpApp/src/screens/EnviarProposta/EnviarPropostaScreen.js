@@ -10,6 +10,8 @@ import { ResumoReputacao } from '../../components/Reputacao';
 import { AuthContext } from '../../contexts/AuthContext';
 import { STATUS_PEDIDO } from '../../services/statusPedido';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
+import SeletorData from '../../components/SeletorData';
+import { descreverDataServico, dataJaPassou } from '../../services/datas';
 
 // Aceita "150", "150,50" e "1.250,00"
 const converterValor = (texto) => {
@@ -25,6 +27,12 @@ export default function EnviarPropostaScreen() {
   const { user } = useContext(AuthContext);
   const [valorProposta, setValorProposta] = useState('');
   const [enviando, setEnviando] = useState(false);
+
+  // Data: o montador concorda com o dia pedido pelo cliente ou sugere outro.
+  // Se o dia pedido já passou (pedido parado no feed), ele precisa sugerir outro.
+  const dataDoClientePassou = dataJaPassou(pedido.dataDesejada);
+  const [concordaComData, setConcordaComData] = useState(!dataDoClientePassou);
+  const [outraData, setOutraData] = useState('');
 
   // Se outro montador fechar o pedido (ou o cliente cancelar) enquanto esta tela está aberta,
   // avisa na hora em vez de deixar o montador descobrir só ao enviar
@@ -57,9 +65,18 @@ export default function EnviarPropostaScreen() {
       return;
     }
 
+    if (!concordaComData && !outraData) {
+      avisar('Atenção', 'Escolha o dia que você sugere para o serviço.');
+      return;
+    }
+
     try {
       setEnviando(true);
-      await api.put(`/pedidos/${pedido.id}/proposta`, { valorProposto: valorNumerico });
+      await api.put(`/pedidos/${pedido.id}/proposta`, {
+        valorProposto: valorNumerico,
+        // Sem data = concorda com o dia pedido pelo cliente
+        dataProposta: concordaComData ? null : outraData,
+      });
 
       avisar('Sucesso', 'Proposta enviada! Agora é só aguardar a resposta do cliente.');
       navigation.goBack();
@@ -133,6 +150,16 @@ export default function EnviarPropostaScreen() {
             </View>
           </View>
 
+          <View style={styles.infoRow}>
+            <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+            <View style={styles.infoTextContainer}>
+              <Text style={styles.infoLabel}>Dia pedido pelo cliente</Text>
+              <Text style={[styles.infoValue, dataDoClientePassou && styles.dataPassada]}>
+                {descreverDataServico(pedido.dataDesejada)}{dataDoClientePassou ? ' (já passou)' : ''}
+              </Text>
+            </View>
+          </View>
+
           {pedido.urlFotoMovelTemporaria ? (
             <Image source={{ uri: pedido.urlFotoMovelTemporaria }} style={styles.imagePreview} />
           ) : (
@@ -154,6 +181,42 @@ export default function EnviarPropostaScreen() {
           <Text style={styles.clienteLink}>Ver avaliações</Text>
           <Ionicons name="chevron-forward" size={18} color="#3182CE" />
         </TouchableOpacity>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Dia do serviço</Text>
+          {!dataDoClientePassou && (
+            <TouchableOpacity
+              style={[styles.opcaoData, concordaComData && styles.opcaoDataAtiva]}
+              onPress={() => setConcordaComData(true)}
+              accessibilityLabel="Posso no dia pedido pelo cliente"
+            >
+              <Ionicons name={concordaComData ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
+              <Text style={styles.opcaoDataTexto}>
+                Posso no dia pedido ({descreverDataServico(pedido.dataDesejada)})
+              </Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={[styles.opcaoData, !concordaComData && styles.opcaoDataAtiva]}
+            onPress={() => setConcordaComData(false)}
+            accessibilityLabel="Sugerir outro dia"
+          >
+            <Ionicons name={!concordaComData ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
+            <Text style={styles.opcaoDataTexto}>Sugerir outro dia</Text>
+          </TouchableOpacity>
+
+          {!concordaComData && (
+            <View style={{ marginTop: 8 }}>
+              <SeletorData valor={outraData} onChange={setOutraData} destacar={pedido.dataDesejada} />
+              <Text style={styles.ajudaData}>
+                {outraData
+                  ? `Você vai sugerir: ${descreverDataServico(outraData)}. O cliente decide se aceita.`
+                  : 'Escolha o dia que você pode ir. O ponto amarelo marca o dia pedido pelo cliente.'}
+              </Text>
+            </View>
+          )}
+          <Text style={styles.ajudaData}>O horário você combina com o cliente pelo chat, depois que ele aceitar.</Text>
+        </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Valor Cobrado do Cliente (PIX)</Text>

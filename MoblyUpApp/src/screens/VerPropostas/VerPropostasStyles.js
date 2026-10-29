@@ -108,6 +108,32 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 8,
   },
+  dataCaixa: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#F0FFF4',
+    borderWidth: 1,
+    borderColor: '#9AE6B4',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  dataCaixaMudou: {
+    backgroundColor: '#FFFFF0',
+    borderColor: '#F6E05E',
+  },
+  dataTexto: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 13,
+    color: '#4A5568',
+    lineHeight: 19,
+  },
+  dataDestaque: {
+    fontWeight: 'bold',
+    color: '#2D3748',
+  },
   rejectButton: {
     borderWidth: 1,
     borderColor: '#E53E3E',

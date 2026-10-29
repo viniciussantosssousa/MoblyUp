@@ -75,6 +75,35 @@ export const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: 12,
   },
+  dataPassada: {
+    color: '#C53030',
+  },
+  opcaoData: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 8,
+  },
+  opcaoDataAtiva: {
+    borderColor: colors.primary,
+    backgroundColor: '#F0F4FF',
+  },
+  opcaoDataTexto: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 15,
+    color: colors.text,
+  },
+  ajudaData: {
+    fontSize: 12,
+    color: '#718096',
+    marginTop: 6,
+    lineHeight: 17,
+  },
   clienteCard: {
     flexDirection: 'row',
     alignItems: 'center',

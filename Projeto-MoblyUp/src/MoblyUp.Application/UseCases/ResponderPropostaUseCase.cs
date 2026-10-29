@@ -22,7 +22,7 @@ namespace MoblyUp.Application.UseCases
         public Task AceitarAsync(Guid pedidoId, string clienteId) =>
             ExecutarAsync(pedidoId, clienteId, pedido => pedido.AceitarProposta(),
                 "Proposta aceita! 🎉",
-                pedido => $"O cliente aceitou {Moeda.Formatar(pedido.ValorProposto)} pelo {pedido.TipoMovel}. Aguarde a confirmação do pagamento.");
+                pedido => $"O cliente aceitou {Moeda.Formatar(pedido.ValorProposto)} pelo {pedido.TipoMovel} para {Datas.Formatar(pedido.DataProposta ?? pedido.DataDesejada)}. Combine o horário pelo chat.");
 
         public Task RecusarAsync(Guid pedidoId, string clienteId) =>
             ExecutarAsync(pedidoId, clienteId, pedido => pedido.RecusarProposta(),

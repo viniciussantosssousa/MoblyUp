@@ -24,6 +24,11 @@ namespace MoblyUp.Application.DTOs
         public StatusPedido Status { get; set; }
         public string StatusDescricao { get; set; } = string.Empty;
 
+        // Data do serviço: pedida pelo cliente e a da proposta do montador (combinada após o aceite)
+        public DateOnly DataDesejada { get; set; }
+        public DateOnly? DataProposta { get; set; }
+        public bool PropostaMudaData { get; set; }
+
         public DateTime DataCriacao { get; set; }
         public DateTime? DataAceite { get; set; }
         public DateTime? DataConclusao { get; set; }
@@ -64,6 +69,9 @@ namespace MoblyUp.Application.DTOs
                 ValorMontador = pedido.ValorMontador,
                 Status = pedido.Status,
                 StatusDescricao = DescreverStatus(pedido.Status),
+                DataDesejada = pedido.DataDesejada,
+                DataProposta = pedido.DataProposta,
+                PropostaMudaData = pedido.PropostaMudaData,
                 DataCriacao = pedido.DataCriacao,
                 DataAceite = pedido.DataAceite,
                 DataConclusao = pedido.DataConclusao,

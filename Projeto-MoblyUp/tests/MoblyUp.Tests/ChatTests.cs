@@ -206,6 +206,7 @@ namespace MoblyUp.Tests
                 TipoMovel = "Guarda-roupa",
                 TamanhoMovel = "6 portas - ligar 34999998888",
                 EnderecoServico = Cenario.Endereco,
+                DataDesejada = Cenario.Data,
             };
 
             await Assert.ThrowsAnyAsync<Exception>(() => criar.ExecutarAsync("cliente-1", request));

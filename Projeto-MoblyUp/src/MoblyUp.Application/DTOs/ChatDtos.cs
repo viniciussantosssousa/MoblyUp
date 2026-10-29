@@ -34,6 +34,8 @@ namespace MoblyUp.Application.DTOs
     {
         public Guid PedidoId { get; set; }
         public string TipoMovel { get; set; } = string.Empty;
+        // Dia combinado na proposta; o horário é o que os dois acertam no chat
+        public DateOnly? DataCombinada { get; set; }
         public StatusPedido Status { get; set; }
         // Aberto = dá para enviar mensagens; fechado = conversa só para leitura
         public bool Aberto { get; set; }

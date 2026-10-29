@@ -6,7 +6,9 @@ import { useNavigation } from '@react-navigation/native';
 import { styles } from './SolicitarServicoStyles';
 import { colors } from '../../theme/colors';
 import api, { enviarImagem, mensagemDeErro } from '../../services/api';
-import { AuthContext } from '../../contexts/AuthContext'; 
+import { AuthContext } from '../../contexts/AuthContext';
+import SeletorData from '../../components/SeletorData';
+import { descreverDataServico } from '../../services/datas';
 
 export default function SolicitarServicoScreen() {
   const navigation = useNavigation();
@@ -20,6 +22,8 @@ export default function SolicitarServicoScreen() {
   const [rua, setRua] = useState('');
   const [numero, setNumero] = useState('');
   const [bairro, setBairro] = useState('');
+  // Dia em que o cliente quer a montagem (o horário é combinado depois, pelo chat)
+  const [dataDesejada, setDataDesejada] = useState('');
   const [enviando, setEnviando] = useState(false);
 
   const handleVoltar = () => {
@@ -72,6 +76,12 @@ export default function SolicitarServicoScreen() {
       return;
     }
 
+    if (!dataDesejada) {
+      const msg = 'Escolha o dia em que você quer a montagem.';
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Atenção', msg);
+      return;
+    }
+
     // MÁGICA DA REGIÃO: Junta o que o usuário digitou com a cidade/estado do Contexto
     const enderecoCompleto = `${rua}, ${numero}, ${bairro} - ${user?.regiao || ''}`;
 
@@ -85,7 +95,8 @@ export default function SolicitarServicoScreen() {
         tipoMovel,
         tamanhoMovel,
         urlFotoMovelTemporaria: urlFotoPublica,
-        enderecoServico: enderecoCompleto // Envia a string completinha para o C#
+        enderecoServico: enderecoCompleto, // Envia a string completinha para o C#
+        dataDesejada, // "2026-10-31"
       });
 
       if (response.status === 201 || response.status === 200) {
@@ -99,6 +110,7 @@ export default function SolicitarServicoScreen() {
         setRua('');
         setNumero('');
         setBairro('');
+        setDataDesejada('');
         navigation.goBack();
       }
     } catch (error) {
@@ -131,6 +143,16 @@ export default function SolicitarServicoScreen() {
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Tamanho / Detalhes</Text>
           <TextInput style={styles.input} placeholder="Ex: 6 portas" value={tamanhoMovel} onChangeText={setTamanhoMovel} />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Para quando você quer a montagem?</Text>
+          <SeletorData valor={dataDesejada} onChange={setDataDesejada} />
+          <Text style={styles.ajudaData}>
+            {dataDesejada
+              ? `Escolhido: ${descreverDataServico(dataDesejada)}. O horário você combina com o montador pelo chat.`
+              : 'O montador pode concordar com o dia ou sugerir outro. O horário é combinado pelo chat.'}
+          </Text>
         </View>
 
         <View style={styles.inputContainer}>

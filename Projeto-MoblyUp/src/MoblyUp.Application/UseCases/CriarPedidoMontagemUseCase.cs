@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using MoblyUp.Application.DTOs;
 using MoblyUp.Application.Interfaces;
+using MoblyUp.Application.Utils;
 using MoblyUp.Domain.Entities;
 using MoblyUp.Domain.Enums;
 using MoblyUp.Domain.Interfaces;
@@ -43,7 +44,8 @@ namespace MoblyUp.Application.UseCases
                 request.TipoMovel,
                 request.TamanhoMovel,
                 request.UrlFotoMovelTemporaria,
-                request.EnderecoServico
+                request.EnderecoServico,
+                request.DataDesejada
             );
 
             await _pedidoRepository.AdicionarAsync(pedido);
@@ -51,7 +53,7 @@ namespace MoblyUp.Application.UseCases
             await _notificacaoService.NotificarMontadoresDaRegiaoAsync(
                 pedido.EnderecoServico,
                 "Nova montagem na sua região 🔨",
-                $"{pedido.TipoMovel} ({pedido.TamanhoMovel}). Envie sua proposta!",
+                $"{pedido.TipoMovel} ({pedido.TamanhoMovel}) para {Datas.Formatar(pedido.DataDesejada)}. Envie sua proposta!",
                 pedido.Id);
         }
     }

@@ -8,6 +8,7 @@ import api from '../../services/api';
 import { STATUS_PEDIDO, isConcluido, formatarData } from '../../services/statusPedido';
 import Estrelas from '../../components/Estrelas';
 import { ResumoReputacao } from '../../components/Reputacao';
+import { descreverDataServico } from '../../services/datas';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
 import BotaoChat from '../../components/BotaoChat';
 
@@ -81,6 +82,9 @@ export default function HistoricoMontadorScreen() {
                   <Text style={styles.cardDate}>{formatarData(pedido.dataConclusao || pedido.dataCriacao)}</Text>
                 </View>
                 <Text style={styles.cardAddress}>{pedido.enderecoServico}</Text>
+                {pedido.dataProposta ? (
+                  <Text style={styles.cardAddress}>Dia do serviço: {descreverDataServico(pedido.dataProposta)}</Text>
+                ) : null}
                 <ResumoReputacao
                   style={styles.cliente}
                   media={pedido.mediaAvaliacaoCliente}

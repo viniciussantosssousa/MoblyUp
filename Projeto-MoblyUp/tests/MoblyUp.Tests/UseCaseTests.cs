@@ -29,7 +29,7 @@ namespace MoblyUp.Tests
         private async Task<Guid> CriarPedidoAsync(string clienteId = "cliente-1")
         {
             await new CriarPedidoMontagemUseCase(_pedidos, _usuarios, _notificacoes).ExecutarAsync(clienteId,
-                new CriarPedidoMontagemRequest { TipoMovel = "Guarda-roupa", TamanhoMovel = "6 portas", EnderecoServico = Cenario.Endereco });
+                new CriarPedidoMontagemRequest { TipoMovel = "Guarda-roupa", TamanhoMovel = "6 portas", EnderecoServico = Cenario.Endereco, DataDesejada = Cenario.Data });
             return _pedidos.Pedidos.Last().Id;
         }
 

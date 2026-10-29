@@ -7,6 +7,7 @@ import { colors } from '../../theme/colors';
 import { AuthContext } from '../../contexts/AuthContext';
 import api from '../../services/api'; // <-- Importando o Axios
 import { STATUS_PEDIDO, isConcluido, formatarData } from '../../services/statusPedido';
+import { descreverDataServico } from '../../services/datas';
 import { encontrarAvaliacaoPendente, adiarAvaliacao } from '../../services/avaliacoesPendentes';
 import ModalAvaliacao from '../../components/ModalAvaliacao';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
@@ -146,6 +147,12 @@ export default function HomeClienteScreen() {
                   <Text style={styles.orderDate}>{formatarData(pedido.dataCriacao) || 'Recente'}</Text>
                 </View>
                 <Text style={styles.orderAddress}>{pedido.enderecoServico}</Text>
+                {pedido.dataDesejada ? (
+                  <Text style={styles.orderDia}>
+                    Montagem: {descreverDataServico(pedido.dataProposta || pedido.dataDesejada)}
+                    {pedido.propostaMudaData && pedido.status === STATUS_PEDIDO.AGUARDANDO_APROVACAO_CLIENTE ? ' (dia sugerido pelo montador)' : ''}
+                  </Text>
+                ) : null}
                 <View style={[
                   concluido ? styles.statusContainerDone : styles.statusContainerPending,
                   cancelado && styles.statusContainerCancelado,

@@ -9,6 +9,7 @@ import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
 import { ResumoReputacao } from '../../components/Reputacao';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
+import { descreverDataServico } from '../../services/datas';
 
 export default function VerPropostasScreen() {
   const navigation = useNavigation();
@@ -126,6 +127,25 @@ export default function VerPropostasScreen() {
 
             <Text style={styles.valorProposta}>{formatarMoeda(pedido.valorProposto)}</Text>
             <Text style={styles.pagamentoInfo}>Pagamento via PIX após o aceite</Text>
+
+            {/* Dia: o montador pode ter concordado com o dia pedido ou sugerido outro */}
+            {pedido.propostaMudaData ? (
+              <View style={[styles.dataCaixa, styles.dataCaixaMudou]}>
+                <Ionicons name="calendar" size={18} color="#B7791F" />
+                <Text style={styles.dataTexto}>
+                  Sugeriu outro dia: <Text style={styles.dataDestaque}>{descreverDataServico(pedido.dataProposta)}</Text>
+                  {'\n'}Você pediu {descreverDataServico(pedido.dataDesejada)}. Aceitando, o serviço fica para o dia sugerido.
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.dataCaixa}>
+                <Ionicons name="calendar" size={18} color="#2F855A" />
+                <Text style={styles.dataTexto}>
+                  Pode no dia que você pediu: <Text style={styles.dataDestaque}>{descreverDataServico(pedido.dataProposta || pedido.dataDesejada)}</Text>
+                </Text>
+              </View>
+            )}
+            <Text style={styles.pagamentoInfo}>O horário vocês combinam pelo chat depois do aceite</Text>
 
             <TouchableOpacity
               style={[styles.acceptButton, processando && { opacity: 0.6 }]}

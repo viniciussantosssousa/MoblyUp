@@ -107,6 +107,12 @@ namespace MoblyUp.Infrastructure.Migrations
                     b.Property<DateTime>("DataCriacao")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateOnly>("DataDesejada")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("DataProposta")
+                        .HasColumnType("date");
+
                     b.Property<DateTime?>("DataPropostaAceita")
                         .HasColumnType("datetime2");
 

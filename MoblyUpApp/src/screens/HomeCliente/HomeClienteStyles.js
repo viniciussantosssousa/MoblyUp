@@ -165,6 +165,12 @@ export const styles = StyleSheet.create({
   orderAddress: {
     fontSize: 14,
     color: '#718096',
+    marginBottom: 6,
+  },
+  orderDia: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4A5568',
     marginBottom: 12,
   },
   statusContainerPending: {

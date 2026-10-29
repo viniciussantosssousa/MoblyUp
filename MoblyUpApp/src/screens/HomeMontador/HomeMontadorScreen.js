@@ -9,6 +9,7 @@ import api, { mensagemDeErro } from '../../services/api';
 import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
 import { ResumoReputacao } from '../../components/Reputacao';
+import { descreverDataServico } from '../../services/datas';
 import { encontrarAvaliacaoPendente, adiarAvaliacao } from '../../services/avaliacoesPendentes';
 import ModalAvaliacao from '../../components/ModalAvaliacao';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
@@ -166,6 +167,14 @@ export default function HomeMontadorScreen() {
                   </View>
 
                   <View style={styles.orderDetailRow}>
+                    <Ionicons name="calendar-outline" size={16} color="#718096" />
+                    <Text style={styles.orderDetailText}>
+                      {descreverDataServico(pedido.dataProposta || pedido.dataDesejada)}
+                      {liberado ? ' · horário pelo chat' : ''}
+                    </Text>
+                  </View>
+
+                  <View style={styles.orderDetailRow}>
                     <Ionicons name="cash-outline" size={16} color="#718096" />
                     <Text style={styles.orderDetailText}>Você recebe {formatarMoeda(pedido.valorMontador)}</Text>
                   </View>
@@ -242,6 +251,11 @@ export default function HomeMontadorScreen() {
                 <View style={styles.orderDetailRow}>
                   <Ionicons name="location-outline" size={16} color="#718096" />
                   <Text style={styles.orderDetailText}>{pedido.enderecoServico || 'Endereço não informado'}</Text>
+                </View>
+
+                <View style={styles.orderDetailRow}>
+                  <Ionicons name="calendar-outline" size={16} color="#718096" />
+                  <Text style={styles.orderDetailText}>Cliente quer para {descreverDataServico(pedido.dataDesejada)}</Text>
                 </View>
 
                 <ResumoReputacao

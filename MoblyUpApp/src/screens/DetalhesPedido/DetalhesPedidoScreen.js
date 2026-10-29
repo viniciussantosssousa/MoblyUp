@@ -11,6 +11,7 @@ import Estrelas from '../../components/Estrelas';
 import { ResumoReputacao } from '../../components/Reputacao';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
 import BotaoChat from '../../components/BotaoChat';
+import { descreverDataServico } from '../../services/datas';
 
 // Texto e ícone exibidos para cada etapa da jornada do serviço
 const ETAPAS = {
@@ -243,6 +244,21 @@ export default function DetalhesPedidoScreen() {
             <Text style={styles.infoLabel}>Endereço</Text>
             <Text style={styles.infoValue}>{pedidoData.enderecoServico}</Text>
           </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Dia pedido</Text>
+            <Text style={styles.infoValue}>{descreverDataServico(pedidoData.dataDesejada)}</Text>
+          </View>
+          {pedidoData.dataProposta ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>{status >= STATUS_PEDIDO.AGUARDANDO_PAGAMENTO ? 'Dia combinado' : 'Dia sugerido'}</Text>
+              <Text style={[styles.infoValue, pedidoData.propostaMudaData && { color: '#B7791F' }]}>
+                {descreverDataServico(pedidoData.dataProposta)}
+              </Text>
+            </View>
+          ) : null}
+          {pedidoData.dataProposta && status >= STATUS_PEDIDO.AGUARDANDO_PAGAMENTO && status <= STATUS_PEDIDO.EM_ANDAMENTO ? (
+            <Text style={styles.infoNota}>O horário é combinado pelo chat.</Text>
+          ) : null}
           {pedidoData.urlFotoMovelTemporaria ? (
             <Image source={{ uri: pedidoData.urlFotoMovelTemporaria }} style={styles.foto} />
           ) : null}

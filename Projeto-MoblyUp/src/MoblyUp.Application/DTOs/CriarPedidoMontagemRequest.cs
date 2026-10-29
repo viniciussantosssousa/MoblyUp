@@ -7,5 +7,7 @@ namespace MoblyUp.Application.DTOs
         public string TamanhoMovel { get; set; } = string.Empty;
         public string? UrlFotoMovelTemporaria { get; set; }
         public string EnderecoServico { get; set; } = string.Empty;
+        // Dia em que o cliente quer o serviço ("2026-11-05"); o horário é combinado pelo chat
+        public DateOnly DataDesejada { get; set; }
     }
 }
