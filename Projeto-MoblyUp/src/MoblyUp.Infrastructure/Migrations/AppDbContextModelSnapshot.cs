@@ -80,6 +80,9 @@ namespace MoblyUp.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal?>("AlturaM")
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<string>("ClienteId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -91,6 +94,9 @@ namespace MoblyUp.Infrastructure.Migrations
                     b.Property<string>("ComentarioMontador")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal?>("ComprimentoM")
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<DateTime?>("DataAceite")
                         .HasColumnType("datetime2");
@@ -123,6 +129,9 @@ namespace MoblyUp.Infrastructure.Migrations
 
                     b.Property<string>("FotoConclusaoUrl")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("LarguraM")
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<string>("MontadorId")
                         .HasColumnType("nvarchar(450)");

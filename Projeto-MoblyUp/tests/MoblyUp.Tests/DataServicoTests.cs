@@ -12,7 +12,7 @@ namespace MoblyUp.Tests
         private static DateOnly Hoje => DataServico.Hoje();
 
         private static PedidoMontagem PedidoPara(DateOnly data) =>
-            new("cliente-1", "Guarda-roupa", "6 portas", null, Cenario.Endereco, data);
+            new("cliente-1", "Guarda-roupa", "6 portas", null, Cenario.Endereco, data, 2.1m, 1.8m, 0.55m);
 
         [Fact]
         public void Pedido_guarda_a_data_desejada()
@@ -96,7 +96,7 @@ namespace MoblyUp.Tests
 
             var dia = Hoje.AddDays(5);
             await new CriarPedidoMontagemUseCase(pedidos, usuarios, notificacoes).ExecutarAsync("cliente-1",
-                new CriarPedidoMontagemRequest { TipoMovel = "Mesa", TamanhoMovel = "4 lugares", EnderecoServico = Cenario.Endereco, DataDesejada = dia });
+                new CriarPedidoMontagemRequest { TipoMovel = "Mesa", TamanhoMovel = "4 lugares", EnderecoServico = Cenario.Endereco, AlturaM = 2.1m, ComprimentoM = 1.8m, LarguraM = 0.55m, DataDesejada = dia });
             var pedido = pedidos.Pedidos.Single();
 
             await new AceitarPedidoUseCase(pedidos, usuarios, notificacoes)
@@ -118,7 +118,7 @@ namespace MoblyUp.Tests
             // DataDesejada não informada = 01/01/0001 (data no passado)
             await Assert.ThrowsAnyAsync<Exception>(() =>
                 new CriarPedidoMontagemUseCase(pedidos, usuarios, new NotificacaoServiceFake()).ExecutarAsync("cliente-1",
-                    new CriarPedidoMontagemRequest { TipoMovel = "Mesa", TamanhoMovel = "4", EnderecoServico = Cenario.Endereco }));
+                    new CriarPedidoMontagemRequest { TipoMovel = "Mesa", TamanhoMovel = "4", EnderecoServico = Cenario.Endereco, AlturaM = 0.8m, ComprimentoM = 1.2m, LarguraM = 0.8m }));
             Assert.Empty(pedidos.Pedidos);
         }
     }

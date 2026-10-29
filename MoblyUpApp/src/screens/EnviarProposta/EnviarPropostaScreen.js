@@ -12,6 +12,7 @@ import { STATUS_PEDIDO } from '../../services/statusPedido';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
 import SeletorData from '../../components/SeletorData';
 import { descreverDataServico, dataJaPassou } from '../../services/datas';
+import { formatarMedidas } from '../../services/medidas';
 
 // Aceita "150", "150,50" e "1.250,00"
 const converterValor = (texto) => {
@@ -139,6 +140,14 @@ export default function EnviarPropostaScreen() {
             <View style={styles.infoTextContainer}>
               <Text style={styles.infoLabel}>Tamanho/Detalhes</Text>
               <Text style={styles.infoValue}>{pedido.tamanhoMovel || 'Não especificado'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Ionicons name="cube-outline" size={20} color={colors.primary} />
+            <View style={styles.infoTextContainer}>
+              <Text style={styles.infoLabel}>Medidas aproximadas (altura × comprimento × largura)</Text>
+              <Text style={styles.infoValue}>{formatarMedidas(pedido) || 'Não informadas'}</Text>
             </View>
           </View>
 

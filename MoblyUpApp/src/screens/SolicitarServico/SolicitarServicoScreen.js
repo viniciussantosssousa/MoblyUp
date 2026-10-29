@@ -9,6 +9,7 @@ import api, { enviarImagem, mensagemDeErro } from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
 import SeletorData from '../../components/SeletorData';
 import { descreverDataServico } from '../../services/datas';
+import { converterMedida, MEDIDA_MINIMA, MEDIDA_MAXIMA } from '../../services/medidas';
 
 export default function SolicitarServicoScreen() {
   const navigation = useNavigation();
@@ -17,6 +18,10 @@ export default function SolicitarServicoScreen() {
   const [tipoMovel, setTipoMovel] = useState('');
   const [tamanhoMovel, setTamanhoMovel] = useState('');
   const [urlFoto, setUrlFoto] = useState('');
+  // Medidas aproximadas em metros (obrigatórias): ajudam o montador a dar o preço
+  const [altura, setAltura] = useState('');
+  const [comprimento, setComprimento] = useState('');
+  const [largura, setLargura] = useState('');
   
   // Novos estados para dividir o endereço
   const [rua, setRua] = useState('');
@@ -76,6 +81,18 @@ export default function SolicitarServicoScreen() {
       return;
     }
 
+    const medidas = { alturaM: converterMedida(altura), comprimentoM: converterMedida(comprimento), larguraM: converterMedida(largura) };
+    if (!medidas.alturaM || !medidas.comprimentoM || !medidas.larguraM) {
+      const msg = 'Informe a altura, o comprimento e a largura aproximados do móvel.';
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Atenção', msg);
+      return;
+    }
+    if (Object.values(medidas).some((m) => m < MEDIDA_MINIMA || m > MEDIDA_MAXIMA)) {
+      const msg = 'As medidas são em metros (ex.: 2,10). Se mediu em centímetros, divida por 100: 210 cm = 2,10 m.';
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Atenção', msg);
+      return;
+    }
+
     if (!dataDesejada) {
       const msg = 'Escolha o dia em que você quer a montagem.';
       Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Atenção', msg);
@@ -96,6 +113,7 @@ export default function SolicitarServicoScreen() {
         tamanhoMovel,
         urlFotoMovelTemporaria: urlFotoPublica,
         enderecoServico: enderecoCompleto, // Envia a string completinha para o C#
+        ...medidas,
         dataDesejada, // "2026-10-31"
       });
 
@@ -107,6 +125,9 @@ export default function SolicitarServicoScreen() {
         setTipoMovel('');
         setTamanhoMovel('');
         setUrlFoto('');
+        setAltura('');
+        setComprimento('');
+        setLargura('');
         setRua('');
         setNumero('');
         setBairro('');
@@ -143,6 +164,27 @@ export default function SolicitarServicoScreen() {
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Tamanho / Detalhes</Text>
           <TextInput style={styles.input} placeholder="Ex: 6 portas" value={tamanhoMovel} onChangeText={setTamanhoMovel} />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Medidas do móvel (em metros)</Text>
+          <View style={styles.medidasLinha}>
+            <View style={styles.medidaCampo}>
+              <Text style={styles.medidaRotulo}>Altura</Text>
+              <TextInput style={styles.input} placeholder="aprox. 2,10" value={altura} onChangeText={setAltura} keyboardType="decimal-pad" accessibilityLabel="Altura aproximada em metros" />
+            </View>
+            <View style={styles.medidaCampo}>
+              <Text style={styles.medidaRotulo}>Comprimento</Text>
+              <TextInput style={styles.input} placeholder="aprox. 1,80" value={comprimento} onChangeText={setComprimento} keyboardType="decimal-pad" accessibilityLabel="Comprimento aproximado em metros" />
+            </View>
+            <View style={[styles.medidaCampo, { marginRight: 0 }]}>
+              <Text style={styles.medidaRotulo}>Largura</Text>
+              <TextInput style={styles.input} placeholder="aprox. 0,55" value={largura} onChangeText={setLargura} keyboardType="decimal-pad" accessibilityLabel="Largura aproximada em metros" />
+            </View>
+          </View>
+          <Text style={styles.ajudaData}>
+            Altura, comprimento e largura aproximados. Não precisa ser exato: serve para o montador estimar o trabalho.
+          </Text>
         </View>
 
         <View style={styles.inputContainer}>

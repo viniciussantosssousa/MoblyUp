@@ -45,7 +45,10 @@ namespace MoblyUp.Application.UseCases
                 request.TamanhoMovel,
                 request.UrlFotoMovelTemporaria,
                 request.EnderecoServico,
-                request.DataDesejada
+                request.DataDesejada,
+                request.AlturaM,
+                request.ComprimentoM,
+                request.LarguraM
             );
 
             await _pedidoRepository.AdicionarAsync(pedido);
@@ -53,7 +56,7 @@ namespace MoblyUp.Application.UseCases
             await _notificacaoService.NotificarMontadoresDaRegiaoAsync(
                 pedido.EnderecoServico,
                 "Nova montagem na sua região 🔨",
-                $"{pedido.TipoMovel} ({pedido.TamanhoMovel}) para {Datas.Formatar(pedido.DataDesejada)}. Envie sua proposta!",
+                $"{pedido.TipoMovel} ({pedido.TamanhoMovel}, {Medidas.Formatar(pedido)}) para {Datas.Formatar(pedido.DataDesejada)}. Envie sua proposta!",
                 pedido.Id);
         }
     }

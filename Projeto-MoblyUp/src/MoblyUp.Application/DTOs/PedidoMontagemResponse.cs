@@ -16,6 +16,9 @@ namespace MoblyUp.Application.DTOs
         public string TamanhoMovel { get; set; } = string.Empty;
         public string? UrlFotoMovelTemporaria { get; set; }
         public string EnderecoServico { get; set; } = string.Empty;
+        public decimal? AlturaM { get; set; }
+        public decimal? ComprimentoM { get; set; }
+        public decimal? LarguraM { get; set; }
 
         public decimal? ValorProposto { get; set; }
         public decimal? TaxaPlataforma { get; set; }
@@ -62,6 +65,9 @@ namespace MoblyUp.Application.DTOs
                 NomeMontador = pedido.Montador?.Nome,
                 TipoMovel = pedido.TipoMovel,
                 TamanhoMovel = pedido.TamanhoMovel,
+                AlturaM = pedido.AlturaM,
+                ComprimentoM = pedido.ComprimentoM,
+                LarguraM = pedido.LarguraM,
                 UrlFotoMovelTemporaria = pedido.UrlFotoMovelTemporaria,
                 EnderecoServico = pedido.EnderecoServico,
                 ValorProposto = pedido.ValorProposto,

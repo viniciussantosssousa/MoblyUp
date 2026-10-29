@@ -207,6 +207,7 @@ namespace MoblyUp.Tests
                 TamanhoMovel = "6 portas - ligar 34999998888",
                 EnderecoServico = Cenario.Endereco,
                 DataDesejada = Cenario.Data,
+                AlturaM = 2.1m, ComprimentoM = 1.8m, LarguraM = 0.55m,
             };
 
             await Assert.ThrowsAnyAsync<Exception>(() => criar.ExecutarAsync("cliente-1", request));

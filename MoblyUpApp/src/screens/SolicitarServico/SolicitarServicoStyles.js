@@ -8,6 +8,18 @@ export const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 17,
   },
+  medidasLinha: {
+    flexDirection: 'row',
+  },
+  medidaCampo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  medidaRotulo: {
+    fontSize: 12,
+    color: '#718096',
+    marginBottom: 4,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,

@@ -20,6 +20,10 @@ namespace MoblyUp.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(100);
 
+            builder.Property(p => p.AlturaM).HasColumnType("decimal(5,2)").IsRequired(false);
+            builder.Property(p => p.ComprimentoM).HasColumnType("decimal(5,2)").IsRequired(false);
+            builder.Property(p => p.LarguraM).HasColumnType("decimal(5,2)").IsRequired(false);
+
             builder.Property(p => p.UrlFotoMovelTemporaria)
                 .HasMaxLength(500)
                 .IsRequired(false);

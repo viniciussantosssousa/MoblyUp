@@ -12,6 +12,7 @@ import { ResumoReputacao } from '../../components/Reputacao';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
 import BotaoChat from '../../components/BotaoChat';
 import { descreverDataServico } from '../../services/datas';
+import { formatarMedidas } from '../../services/medidas';
 
 // Texto e ícone exibidos para cada etapa da jornada do serviço
 const ETAPAS = {
@@ -240,6 +241,12 @@ export default function DetalhesPedidoScreen() {
             <Text style={styles.infoLabel}>Tamanho</Text>
             <Text style={styles.infoValue}>{pedidoData.tamanhoMovel || 'Não informado'}</Text>
           </View>
+          {formatarMedidas(pedidoData) ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Medidas</Text>
+              <Text style={styles.infoValue}>{formatarMedidas(pedidoData)}</Text>
+            </View>
+          ) : null}
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Endereço</Text>
             <Text style={styles.infoValue}>{pedidoData.enderecoServico}</Text>

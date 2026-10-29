@@ -13,6 +13,11 @@ namespace MoblyUp.Domain.Entities
         public string? UrlFotoMovelTemporaria { get; private set; }
         public string EnderecoServico { get; private set; }
 
+        // Medidas aproximadas em metros. Nulas só em pedidos criados antes de virarem obrigatórias.
+        public decimal? AlturaM { get; private set; }
+        public decimal? ComprimentoM { get; private set; }
+        public decimal? LarguraM { get; private set; }
+
         public decimal? ValorProposto { get; private set; }
         public decimal? TaxaPlataforma { get; private set; }
         public decimal? ValorMontador { get; private set; }
@@ -50,9 +55,13 @@ namespace MoblyUp.Domain.Entities
 
         protected PedidoMontagem() { }
 
-        public PedidoMontagem(string clienteId, string tipoMovel, string tamanhoMovel, string? urlFotoMovelTemporaria, string enderecoServico, DateOnly dataDesejada)
+        public PedidoMontagem(string clienteId, string tipoMovel, string tamanhoMovel, string? urlFotoMovelTemporaria, string enderecoServico, DateOnly dataDesejada,
+            decimal? alturaM, decimal? comprimentoM, decimal? larguraM)
         {
             ValueObjects.DataServico.Validar(dataDesejada, "data desejada para o serviço");
+            AlturaM = ValueObjects.MedidasMovel.Validar(alturaM, "altura");
+            ComprimentoM = ValueObjects.MedidasMovel.Validar(comprimentoM, "comprimento");
+            LarguraM = ValueObjects.MedidasMovel.Validar(larguraM, "largura");
 
             Id = Guid.NewGuid();
             DataDesejada = dataDesejada;

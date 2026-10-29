@@ -107,7 +107,7 @@ namespace MoblyUp.Tests
         {
             _usuarios.Usuarios.Add(Cenario.Cliente("antigo", comCpf: false));
             var criar = new CriarPedidoMontagemUseCase(_pedidos, _usuarios, _notificacoes);
-            var pedido = new CriarPedidoMontagemRequest { TipoMovel = "Mesa", TamanhoMovel = "4 lugares", EnderecoServico = Cenario.Endereco, DataDesejada = Cenario.Data };
+            var pedido = new CriarPedidoMontagemRequest { TipoMovel = "Mesa", TamanhoMovel = "4 lugares", EnderecoServico = Cenario.Endereco, AlturaM = 2.1m, ComprimentoM = 1.8m, LarguraM = 0.55m, DataDesejada = Cenario.Data };
 
             await Assert.ThrowsAnyAsync<Exception>(() => criar.ExecutarAsync("antigo", pedido));
             Assert.False((await Perfil().ObterAsync("antigo"))!.CpfCadastrado);
@@ -124,7 +124,7 @@ namespace MoblyUp.Tests
             _usuarios.Usuarios.Add(Cenario.Cliente("cliente-1"));
             _usuarios.Usuarios.Add(Cenario.Montador("montador-antigo", comCpf: false));
             await new CriarPedidoMontagemUseCase(_pedidos, _usuarios, _notificacoes).ExecutarAsync("cliente-1",
-                new CriarPedidoMontagemRequest { TipoMovel = "Mesa", TamanhoMovel = "4 lugares", EnderecoServico = Cenario.Endereco, DataDesejada = Cenario.Data });
+                new CriarPedidoMontagemRequest { TipoMovel = "Mesa", TamanhoMovel = "4 lugares", EnderecoServico = Cenario.Endereco, AlturaM = 2.1m, ComprimentoM = 1.8m, LarguraM = 0.55m, DataDesejada = Cenario.Data });
 
             await Assert.ThrowsAnyAsync<Exception>(() =>
                 new AceitarPedidoUseCase(_pedidos, _usuarios, _notificacoes)

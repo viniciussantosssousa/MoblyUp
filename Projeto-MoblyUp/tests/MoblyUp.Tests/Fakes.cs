@@ -193,6 +193,6 @@ namespace MoblyUp.Tests
         }
 
         public static PedidoMontagem Pedido(string clienteId = "cliente-1") =>
-            new(clienteId, "Guarda-roupa", "6 portas", null, Endereco, Data);
+            new(clienteId, "Guarda-roupa", "6 portas", null, Endereco, Data, 2.1m, 1.8m, 0.55m);
     }
 }

@@ -10,6 +10,7 @@ import { avisar, confirmar } from '../../services/alerta';
 import { STATUS_PEDIDO, formatarMoeda } from '../../services/statusPedido';
 import { ResumoReputacao } from '../../components/Reputacao';
 import { descreverDataServico } from '../../services/datas';
+import { formatarMedidas } from '../../services/medidas';
 import { encontrarAvaliacaoPendente, adiarAvaliacao } from '../../services/avaliacoesPendentes';
 import ModalAvaliacao from '../../components/ModalAvaliacao';
 import useAtualizacaoAoVivo from '../../hooks/useAtualizacaoAoVivo';
@@ -247,6 +248,13 @@ export default function HomeMontadorScreen() {
                   <Ionicons name="resize-outline" size={16} color="#718096" />
                   <Text style={styles.orderDetailText}>{pedido.tamanhoMovel || 'Tamanho não informado'}</Text>
                 </View>
+
+                {formatarMedidas(pedido) ? (
+                  <View style={styles.orderDetailRow}>
+                    <Ionicons name="cube-outline" size={16} color="#718096" />
+                    <Text style={styles.orderDetailText}>{formatarMedidas(pedido)}</Text>
+                  </View>
+                ) : null}
 
                 <View style={styles.orderDetailRow}>
                   <Ionicons name="location-outline" size={16} color="#718096" />
